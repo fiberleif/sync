@@ -15,40 +15,24 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 import matplotlib.pyplot as plt
+from predictor import Predictor
+from selector import Selector
 from datetime import datetime
 from functools import reduce
 from operator import mul
 from sklearn import preprocessing
 
-def main(timesteps, num_channels, num_classes, batch_size, epochs, lr, dropout):
-    """ Main training loop
+def prepare_data(timesteps, num_channels, num_classes, train_dataset_path, test_dataset_path):
+    """
+    prepare training data.
 
     Args:
     pass
 
     """
-    # # np.random.seed(0)
-    # num_classes = 3 
-    # batch_size = 256
-    # origin_length = 39
-
-    # # load dataset
-    # timestep = int(sys.argv[1])
-    # epochs = int(sys.argv[2]
-    # lr = float(sys.argv[3])
-    # dropout = float(sys.argv[4])
-
     feature_start_column_idx = 2
     feature_end_column_idx = 2 + num_channels * timesteps
     label_column_idx = feature_end_column_idx + 1
-
-    train_dataset_path = "/home/data/guoqing/dataset/timestep_" + str(timesteps) \
-                + "_train_dataset.csv"
-    test_dataset_path = "/home/data/guoqing/dataset/timestep_" + str(timesteps) \
-                + "_test_dataset.csv"
-    save_path = "/home/data/guoqing/prediction/result/cnn_timestep_" + str(timesteps) \
-                 + "_lr_" + str(lr) + "_dp_" + str(dropout) + "_epoch_" + str(epoch) + ".csv"
-
 
     train_csv = pd.read_csv(train_dataset_path)
     test_csv = pd.read_csv(test_dataset_path)
@@ -72,47 +56,73 @@ def main(timesteps, num_channels, num_classes, batch_size, epochs, lr, dropout):
     X_test_norm = factor_scaler.transform(X_test)
 
     # reshape
-    img_rows = timestep
-    img_cols = num_channels
-    X_train_reshape = X_train_norm.reshape(X_train_norm.shape[0], img_rows, img_cols, 1)
-    X_test_reshape = X_test_norm.reshape(X_test_norm.shape[0], img_rows, img_cols, 1)
-    input_shape = (img_rows, img_cols, 1)
+    # img_rows = timestep
+    # img_cols = num_channels
+    X_train_reshape = X_train_norm.reshape(X_train_norm.shape[0], timesteps, num_channels, 1)
+    X_test_reshape = X_test_norm.reshape(X_test_norm.shape[0], timesteps, num_channels, 1)
+    # input_shape = (img_rows, img_cols, 1)
+    return X_train_reshape, Y_train, X_test_reshape, Y_test, train_size, test_size
 
-    # tensorflow
-    # bulid graph
 
-    # placeholder
-    keep_prob = tf.placeholder(tf.float32)
-    # bn_flag = tf.placeholder(tf.bool, name="training")
-    x = tf.placeholder(tf.float32, [None, img_rows, img_cols, 1],'input_x')
-    y = tf.placeholder(tf.float32, [None, num_classes], 'label_y')
 
-    conv = tf.layers.conv2d(inputs=x, filters=16, kernel_size= [3,1], activation=None)
-    # conv_bn = tf.layers.batch_normalization(inputs=conv, training=bn_flag)
-    conv_out = tf.nn.relu(conv)
-    flat= tf.contrib.layers.flatten(conv_out)
-    dense = tf.layers.dense(inputs=flat, units=10, activation=None)
-    # dense_bn = tf.layers.batch_normalization(inputs=dense, training=bn_flag)
-    dense_output = tf.nn.relu(dense)
-    dense_dp = tf.nn.dropout(dense_output, keep_prob)
-    prediction = tf.layers.dense(inputs=dense_dp, units=3, activation=tf.nn.softmax)
+def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, lr_predictor, lr_selector, dropout):
+    """ Main training loop.
 
-    # define loss
-    cross_entropy_loss = tf.reduce_mean(-tf.reduce_sum(y*tf.log(prediction), reduction_indices=[1]))
-    # train_step = tf.train.AdamOptimizer(learning_rate=1e-5).minimize(cross_entropy_loss)
-    # update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-    # with tf.control_dependencies(update_ops):
-    train_op = tf.train.GradientDescentOptimizer(learning_rate=lr).minimize(cross_entropy_loss)
+    Args:
+    pass
 
-    correct_prediction = tf.equal(tf.argmax(prediction,1), tf.argmax(y,1))
-    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    """
 
-    # train
-    config = tf.ConfigProto()
-    config.gpu_options.allow_growth=True
-    sess = tf.InteractiveSession(config=config)
+    """
+    set global seed function
+    pass
 
-    sess.run(tf.global_variables_initializer())
+    """
+    train_dataset_path = "/home/data/guoqing/dataset/timestep_" + str(timesteps) \
+                + "_train_dataset.csv"
+    test_dataset_path = "/home/data/guoqing/dataset/timestep_" + str(timesteps) \
+                + "_test_dataset.csv"
+    save_path = "/home/data/guoqing/prediction/result/cnn_timestep_" + str(timesteps) \
+                 + "_lr_" + str(lr) + "_dp_" + str(dropout) + "_epoch_" + str(epoch) + ".csv"
+
+    X_train_reshape, Y_train, X_test_reshape, Y_test, train_size, test_size = prepare_data(timesteps, num_channels, \
+                                                    num_classes, train_dataset_path, test_dataset_path)
+    predictor = Predictor(timesteps, num_channels, hidden_size, num_classes, lr_predictor, dropout)
+    selector = Selector(hidden_size, lr_selector)
+
+
+    # # placeholder
+    # keep_prob = tf.placeholder(tf.float32)
+    # # bn_flag = tf.placeholder(tf.bool, name="training")
+    # x = tf.placeholder(tf.float32, [None, img_rows, img_cols, 1],'input_x')
+    # y = tf.placeholder(tf.float32, [None, num_classes], 'label_y')
+
+    # conv = tf.layers.conv2d(inputs=x, filters=16, kernel_size= [3,1], activation=None)
+    # # conv_bn = tf.layers.batch_normalization(inputs=conv, training=bn_flag)
+    # conv_out = tf.nn.relu(conv)
+    # flat= tf.contrib.layers.flatten(conv_out)
+    # dense = tf.layers.dense(inputs=flat, units=10, activation=None)
+    # # dense_bn = tf.layers.batch_normalization(inputs=dense, training=bn_flag)
+    # dense_output = tf.nn.relu(dense)
+    # dense_dp = tf.nn.dropout(dense_output, keep_prob)
+    # prediction = tf.layers.dense(inputs=dense_dp, units=3, activation=tf.nn.softmax)
+
+    # # define loss
+    # cross_entropy_loss = tf.reduce_mean(-tf.reduce_sum(y*tf.log(prediction), reduction_indices=[1]))
+    # # train_step = tf.train.AdamOptimizer(learning_rate=1e-5).minimize(cross_entropy_loss)
+    # # update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+    # # with tf.control_dependencies(update_ops):
+    # train_op = tf.train.GradientDescentOptimizer(learning_rate=lr).minimize(cross_entropy_loss)
+
+    # correct_prediction = tf.equal(tf.argmax(prediction,1), tf.argmax(y,1))
+    # accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+
+    # # train
+    # config = tf.ConfigProto()
+    # config.gpu_options.allow_growth=True
+    # sess = tf.InteractiveSession(config=config)
+
+    # sess.run(tf.global_variables_initializer())
     # print("conv dimension:", sess.run([tf.shape(conv),tf.shape(flat)],feed_dict={x: X_test_reshape, y:Y_test}))
 
     num_params = 0
@@ -191,22 +201,16 @@ def main(timesteps, num_channels, num_classes, batch_size, epochs, lr, dropout):
 
 if __name__ == "__main__":
     parser = argparser.ArgumentParser()
-    parser.add_argument('timesteps', type=int, help='input sequence timesteps', default=5)
-    parser.add_argument('num_channels', type=int, help='input feature dimension', default=39)
-    parser.add_argument('num_classes', type=int, help='number of class', default=3)
-    parser.add_argument('batch_size', type=int, help='batch size', default=256)
-    parser.add_argument('epochs', type=int, help='epoch number', default=500)
-    parser.add_argument('lr', type=float, help='learning rate', default=1e-1)
-    parser.add_argument('dropout', type=float, help='keep rate', default=1)
-    # num_classes = 3 
-    # batch_size = 256
-    # origin_length = 39
+    parser.add_argument('--timesteps', type=int, help='input sequence timesteps', default=5)
+    parser.add_argument('--num_channels', type=int, help='input feature dimension', default=39)
+    parser.add_argument('--hidden_size', type=int, help='hidden size for selection', default=10)
+    parser.add_argument('--num_classes', type=int, help='number of class', default=3)
+    parser.add_argument('--batch_size', type=int, help='batch size', default=256)
+    parser.add_argument('--epochs', type=int, help='epoch number', default=500)
+    parser.add_argument('--lr_predictor', type=float, help='learning rate of predictor network', default=1e-1)
+    parser.add_argument('--lr_selector', type=float, help='learning rate of selector network', default=1e-3)
+    parser.add_argument('--dropout', type=float, help='keep rate', default=1)
 
-    # # load dataset
-    # timestep = int(sys.argv[1])
-    # epochs = int(sys.argv[2])
-    # lr = float(sys.argv[3])
-    # dropout = float(sys.argv[4])
     args = parser.parse_args()
     main(**vars(args))
     sys.exit()
