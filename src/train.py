@@ -24,7 +24,7 @@ from sklearn import preprocessing
 
 def prepare_data(timesteps, num_channels, num_classes, train_dataset_path, test_dataset_path):
     """
-    prepare training data.
+    Prepare training data.
 
     Args:
     pass
@@ -74,7 +74,7 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
     """
 
     """
-    set global seed function
+    Set global seed function
     pass
 
     """

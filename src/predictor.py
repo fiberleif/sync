@@ -34,6 +34,8 @@ class Predictor(object):
             self._placeholders()
             self._predictor_nn()
             self._loss_train_op()
+            self._reward_test_op()
+            self._accuracy_test_op()
             self.init = tf.global_variables_initializer()
 
     def _placeholders(self):
@@ -46,6 +48,7 @@ class Predictor(object):
         self.action_ph = tf.placeholder(tf.float32, [None, self.hidden_size], 'action_sequence')
 
     def _predictor_nn():
+    """ Predictor network structure """
         self.conv = tf.layers.conv2d(inputs=self.input_ph, filters=16, kernel_size= [3,1], activation=tf.nn.relu)
         self.flat = tf.contrib.layers.flatten(self.conv)
         self.dense = tf.layers.dense(inputs=self.flat, units=self.hidden_size, activation=tf.nn.relu)
@@ -56,7 +59,14 @@ class Predictor(object):
     def _loss_train_op():
         self.loss = tf.reduce_mean(-tf.reduce_sum(y*tf.log(self.trend_prob), reduction_indices=[1]))
         self.train_op = tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(self.loss)
-        
+    
+    def _reward_test_op():
+        self.reward = tf.reduce_sum(y*tf.log(self.trend_prob), reduction_indices=[1])
+
+    def _accuracy_test_op():
+        self.acc_bool = tf.equal(tf.argmax(trend_prob,1), tf.argmax(label_ph,1))
+        self.accuracy = tf.reduce_mean(tf.cast(self.acc_bool, tf.float32))
+
     def _init_session(self):
         self.config = tf.ConfigProto()
         self.config.gpu_options.allow_growth=True

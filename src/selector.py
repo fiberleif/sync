@@ -10,7 +10,7 @@ import numpy as np
 import tensorflow as tf
 
 class Selector(object):
-	"""NN-based Pattern Selector"""
+	"""NN-based Pattern Selector """
 	def __init__(self, hidden_size, lr_selector):
 		self.input_dim = 3*hidden_size
 		self.lr = lr_selector
@@ -18,17 +18,17 @@ class Selector(object):
         self._init_session()
 
     def _build_graph(self):
-        """ construct tensorflow graph, including loss function, init op and train op"""
+        """ Construct tensorflow graph, including loss function, init op and train op """
         self.g = tf.Graph()
         with self.g.as_default():
             self._placeholders()
             self._selector_nn()
             self._loss_train_op()
-            self._sample()
+            # self._sample()
             self.init = tf.global_variables_initializer()
 
     def _placeholders(self):
-        """" input placeholders """
+        """" Input placeholders """
         # inputs, labels and actions:
         self.obs_ph = tf.placeholder(tf.float32, (None, self.input_dim), "observations") 
         self.act_ph = tf.placeholder(tf.float32, (None, 2), "actions") 
@@ -40,7 +40,13 @@ class Selector(object):
     def _loss_train_op(self):
         self.loss = tf.reduce_mean(-tf.reduce_sum(self.act_ph*tf.log(act_prob), reduction_indices=[1])*self.adv_ph)
         self.train_op = tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(self.loss)
-    def _sample(self):
+    
+    def _sample_multinomial(self):
+        """ Sample from distribution, given observation """
+        return tf.multinomial(self.act_prob, 1)
+
+    def _sample_max(self):
+        return tf.argmax(self.act_prob, 1)
 
     def _init_session(self):
         self.config = tf.ConfigProto()
