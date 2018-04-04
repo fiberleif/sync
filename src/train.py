@@ -8,39 +8,46 @@ Written by Guoqing Liu
 """
 import os
 import sys
+import keras
+import signal
+import argparse
 import numpy as np
 import pandas as pd
-from datetime import datetime
-import matplotlib.pyplot as plt
-import keras
-from sklearn import preprocessing
 import tensorflow as tf
+import matplotlib.pyplot as plt
+from datetime import datetime
 from functools import reduce
 from operator import mul
+from sklearn import preprocessing
 
-def main():
-    
-    np.random.seed(0)
-    num_classes = 3 
-    batch_size = 256
-    origin_length = 39
+def main(timesteps, num_channels, num_classes, batch_size, epochs, lr, dropout):
+    """ Main training loop
 
-    # load dataset
-    timestep = int(sys.argv[1])
-    epochs = int(sys.argv[2])
-    lr = float(sys.argv[3])
-    dropout = float(sys.argv[4])
+    Args:
+    pass
+
+    """
+    # # np.random.seed(0)
+    # num_classes = 3 
+    # batch_size = 256
+    # origin_length = 39
+
+    # # load dataset
+    # timestep = int(sys.argv[1])
+    # epochs = int(sys.argv[2]
+    # lr = float(sys.argv[3])
+    # dropout = float(sys.argv[4])
 
     feature_start_column_idx = 2
-    feature_end_column_idx = 2 + origin_length*timestep
+    feature_end_column_idx = 2 + num_channels * timesteps
     label_column_idx = feature_end_column_idx + 1
 
-    train_dataset_path = "/home/data/guoqing/dataset/timestep_" + str(timestep) \
+    train_dataset_path = "/home/data/guoqing/dataset/timestep_" + str(timesteps) \
                 + "_train_dataset.csv"
-    test_dataset_path = "/home/data/guoqing/dataset/timestep_" + str(timestep) \
+    test_dataset_path = "/home/data/guoqing/dataset/timestep_" + str(timesteps) \
                 + "_test_dataset.csv"
-    save_path = "/home/data/guoqing/prediction/result/cnn_timestep_" + str(timestep) \
-                 + "_lr_" + str(lr) + "_dp_" + str(dropout) + "_epoch_" + str(epochs) + ".csv"
+    save_path = "/home/data/guoqing/prediction/result/cnn_timestep_" + str(timesteps) \
+                 + "_lr_" + str(lr) + "_dp_" + str(dropout) + "_epoch_" + str(epoch) + ".csv"
 
 
     train_csv = pd.read_csv(train_dataset_path)
@@ -66,7 +73,7 @@ def main():
 
     # reshape
     img_rows = timestep
-    img_cols = origin_length
+    img_cols = num_channels
     X_train_reshape = X_train_norm.reshape(X_train_norm.shape[0], img_rows, img_cols, 1)
     X_test_reshape = X_test_norm.reshape(X_test_norm.shape[0], img_rows, img_cols, 1)
     input_shape = (img_rows, img_cols, 1)
@@ -78,7 +85,7 @@ def main():
     keep_prob = tf.placeholder(tf.float32)
     # bn_flag = tf.placeholder(tf.bool, name="training")
     x = tf.placeholder(tf.float32, [None, img_rows, img_cols, 1],'input_x')
-    y = tf.placeholder(tf.float32, [None, 3], 'label_y')
+    y = tf.placeholder(tf.float32, [None, num_classes], 'label_y')
 
     conv = tf.layers.conv2d(inputs=x, filters=16, kernel_size= [3,1], activation=None)
     # conv_bn = tf.layers.batch_normalization(inputs=conv, training=bn_flag)
@@ -183,5 +190,23 @@ def main():
     result.to_csv(save_path, index=False)
 
 if __name__ == "__main__":
-    main()
+    parser = argparser.ArgumentParser()
+    parser.add_argument('timesteps', type=int, help='input sequence timesteps', default=5)
+    parser.add_argument('num_channels', type=int, help='input feature dimension', default=39)
+    parser.add_argument('num_classes', type=int, help='number of class', default=3)
+    parser.add_argument('batch_size', type=int, help='batch size', default=256)
+    parser.add_argument('epochs', type=int, help='epoch number', default=500)
+    parser.add_argument('lr', type=float, help='learning rate', default=1e-1)
+    parser.add_argument('dropout', type=float, help='keep rate', default=1)
+    # num_classes = 3 
+    # batch_size = 256
+    # origin_length = 39
+
+    # # load dataset
+    # timestep = int(sys.argv[1])
+    # epochs = int(sys.argv[2])
+    # lr = float(sys.argv[3])
+    # dropout = float(sys.argv[4])
+    args = parser.parse_args()
+    main(**vars(args))
     sys.exit()
