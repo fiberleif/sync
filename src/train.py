@@ -171,6 +171,7 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
             # batch_y = Y_train_shuffle[start:start + batch_size]
             batch_x = X_train_shuffle[start:start + batch_size]
             batch_y = Y_train_shuffle[start:start + batch_size]
+            batch_a = np.ones((batch_size, hidden_size))
             # run optimizer with batch
             # sess.run(train_step, feed_dict={x: batch_x, y: batch_y, keep_prob: 0.5})
             predictor.sess.run(predictor.train_op, feed_dict={predictor.input_ph: batch_x, \
