@@ -63,6 +63,37 @@ def prepare_data(timesteps, num_channels, num_classes, train_dataset_path, test_
     # input_shape = (img_rows, img_cols, 1)
     return X_train_reshape, Y_train, X_test_reshape, Y_test, train_size, test_size
 
+    # hidden_vector = sess.run(dense, feed: inputs, labels)
+    # binary_vector = np.zero(batch_size, hidden_size)
+    # state_list = []
+    # action_list = []
+    # for i in range(hidden_size):
+    #     position_vector = np.zeros(batch_size, hidden_size)
+    #     position_vector[:,i] = 1
+    #     state = np.concat(hidden_vector, binary_vector, position_vector)
+    #     sample(state)->  action(shape: batch_size * 1)
+    #     state_list.append(state)
+    #     action_list.append(action)
+    #     binary_vector [:,hidden_size + i] = actions
+    # action_sequence = concat(action_list)
+    # accuracy = sess.run(inputs, labels, action_sequence)
+    # acc_l += acurracy
+
+def run_episode(batch_x, predictor, selector, batch_size, hidden_size):
+    """
+    collect trajectories given batch_x
+    """
+    hidden_vector = predictor._get_hidden_state(batch_x)
+    binary_vector = np.zeros(batch_size, hidden_size)
+    state_list = []
+    action_list = []
+    for i in range(hidden_size):
+        position_vector = np.zeros(batch_size, hidden_size)
+        position_vector[:,i] = 1
+        state = np.concatenate((hidden_vector, binary_vector, position_vector), axis=1)
+        action = selector._sample_multinomial(state)
+        state_list.append(state)
+        action_list.append()
 
 
 def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, lr_predictor, lr_selector, dropout):
@@ -177,8 +208,79 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
             predictor.sess.run(predictor.train_op, feed_dict={predictor.input_ph: batch_x, \
                                             predictor.label_ph: batch_y, predictor.action_ph: batch_a, keep_prob_ph: dropout})
 
-    result = pd.DataFrame({'train_acc': train_acc_list, 'test_acc': test_acc_list, 'train_loss': train_loss_list ,'test_loss': test_loss_list})
-    result.to_csv(save_path, index=False)
+    # result = pd.DataFrame({'train_acc': train_acc_list, 'test_acc': test_acc_list, 'train_loss': train_loss_list ,'test_loss': test_loss_list})
+    # result.to_csv(save_path, index=False)
+
+    # Joint-train trend predictor & pattern selector
+    for e in range(epochs):
+        # shuffle training data
+        shuffle_indices = np.random.permutation(np.arange(train_size))
+        X_train_shuffle = X_train_reshape[shuffle_indices]
+        Y_train_shuffle = Y_train[shuffle_indices]
+        train_acc_sum = 0
+        test_acc_sum = 0 
+        train_loss_sum = 0
+        test_loss_sum = 0
+
+        for i in range(0, train_batch_num):
+            start = i * batch_size
+            # batch_x = X_train_shuffle[start:start + batch_size]
+            # batch_y = Y_train_shuffle[start:start + batch_size]
+            batch_x = X_train_reshape[start:start + batch_size]
+            batch_y = Y_train[start:start + batch_size]
+            # batch_a = np.ones((batch_size, hidden_size))
+            batch_a = run_episode(batch_x, predictor, selector)
+            # train_acc = accuracy.eval(feed_dict={x: batch_x, y: batch_y, keep_prob:1})
+            train_acc = predictor.sess.run(predictor.accuracy, feed_dict={predictor.input_ph: batch_x, \
+                                                    predictor.label_ph: batch_y, predictor.action_ph: batch_a, predictor.keep_prob_ph: 1})
+            # train_loss = cross_entropy_loss.eval(feed_dict={x: batch_x, y: batch_y, keep_prob:1})
+            train_loss = predictor.sess.run(predictor.loss, feed_dict={predictor.input_ph: batch_x, \
+                                                    predictor.label_ph: batch_y, predictor.action_ph: batch_a, predictor.keep_prob_ph: 1})
+            train_acc_sum += train_acc
+            train_loss_sum += train_loss
+        
+        train_acc_avg = train_acc_sum / train_batch_num
+        train_loss_avg = train_loss_sum / train_batch_num 
+        train_acc_list.append(train_acc_avg)
+        train_loss_list.append(train_loss_avg)
+
+        for i in range(0, test_batch_num):
+            start = i * batch_size
+            # batch_x = X_train_shuffle[start:start + batch_size]
+            # batch_y = Y_train_shuffle[start:start + batch_size]
+            batch_x = X_test_reshape[start:start + batch_size]
+            batch_y = Y_test[start:start + batch_size]
+            batch_a = np.ones((batch_size, hidden_size))
+            # test_acc = accuracy.eval(feed_dict={x: batch_x, y: batch_y, keep_prob:1})
+            test_acc = predictor.sess.run(predictor.accuracy, feed_dict={predictor.input_ph: batch_x, \
+                                                    predictor.label_ph: batch_y, predictor.action_ph: batch_a, predictor.keep_prob_ph: 1})
+            # test_loss = cross_entropy_loss.eval(feed_dict={x: batch_x, y: batch_y, keep_prob:1})
+            test_loss = predictor.sess.run(predictor.loss, feed_dict={predictor.input_ph: batch_x, \
+                                                    predictor.label_ph: batch_y, predictor.action_ph: batch_a, predictor.keep_prob_ph: 1})
+            test_acc_sum += test_acc
+            test_loss_sum += test_loss
+        
+        test_acc_avg = test_acc_sum / test_batch_num
+        test_loss_avg = test_loss_sum / test_batch_num 
+        test_acc_list.append(test_acc_avg)
+        test_loss_list.append(test_loss_avg)
+
+        print("epoch %d: train_acc %f, test_acc %f, train_loss %f, test_loss %f" % (e, train_acc_avg, test_acc_avg, train_loss_avg, test_loss_avg))
+
+        #Minibatch training
+        for i in range(0, train_size // batch_size):
+            start = i * batch_size
+            # batch_x = X_train_shuffle[start:start + batch_size]
+            # batch_y = Y_train_shuffle[start:start + batch_size]
+            batch_x = X_train_shuffle[start:start + batch_size]
+            batch_y = Y_train_shuffle[start:start + batch_size]
+            batch_a = np.ones((batch_size, hidden_size))
+            # run optimizer with batch
+            # sess.run(train_step, feed_dict={x: batch_x, y: batch_y, keep_prob: 0.5})
+            predictor.sess.run(predictor.train_op, feed_dict={predictor.input_ph: batch_x, \
+                                            predictor.label_ph: batch_y, predictor.action_ph: batch_a, keep_prob_ph: dropout})
+
+
 
 if __name__ == "__main__":
     parser = argparser.ArgumentParser()

@@ -47,7 +47,7 @@ class Predictor(object):
         self.label_ph = tf.placeholder(tf.float32, [None, self.num_classes], 'label_y')
         self.action_ph = tf.placeholder(tf.float32, [None, self.hidden_size], 'action_sequence')
 
-    def _predictor_nn():
+    def _predictor_nn(self):
     """ Predictor network structure """
         self.conv = tf.layers.conv2d(inputs=self.input_ph, filters=16, kernel_size= [3,1], activation=tf.nn.relu)
         self.flat = tf.contrib.layers.flatten(self.conv)
@@ -56,14 +56,14 @@ class Predictor(object):
         self.dense_sel = self.dense_dropout*self.action_ph
         self.trend_prob = tf.layers.dense(inputs=dense_sel, units=self.num_classes, activation=tf.nn.softmax)
 
-    def _loss_train_op():
+    def _loss_train_op(self):
         self.loss = tf.reduce_mean(-tf.reduce_sum(y*tf.log(self.trend_prob), reduction_indices=[1]))
         self.train_op = tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(self.loss)
     
-    def _reward_test_op():
+    def _reward_test_op(self):
         self.reward = tf.reduce_sum(y*tf.log(self.trend_prob), reduction_indices=[1])
 
-    def _accuracy_test_op():
+    def _accuracy_test_op(self):
         self.acc_bool = tf.equal(tf.argmax(trend_prob,1), tf.argmax(label_ph,1))
         self.accuracy = tf.reduce_mean(tf.cast(self.acc_bool, tf.float32))
 
@@ -73,6 +73,8 @@ class Predictor(object):
         self.sess = tf.Session(graph=self.g, config=config)
         self.sess.run(self.init)
 
+    def _get_hidden_state(self, batch_x):
+        return self.sess.run(self.dense, feed_dict={input_ph: batch_x})
 
     # # placeholder
     # keep_prob = tf.placeholder(tf.float32)
