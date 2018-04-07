@@ -93,7 +93,10 @@ def run_episode(batch_x, predictor, selector, batch_size, hidden_size):
         state = np.concatenate((hidden_vector, binary_vector, position_vector), axis=1)
         action = selector._sample_multinomial(state)
         state_list.append(state)
-        action_list.append()
+        action_list.append(action)
+        binary_vector[:,i] = action
+    actions = np.concatenate(action_list, axis=1)
+    return actions
 
 
 def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, lr_predictor, lr_selector, dropout):
@@ -229,7 +232,7 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
             batch_x = X_train_reshape[start:start + batch_size]
             batch_y = Y_train[start:start + batch_size]
             # batch_a = np.ones((batch_size, hidden_size))
-            batch_a = run_episode(batch_x, predictor, selector)
+            batch_a = run_episode(batch_x, predictor, selector, batch_size, hidden_size)
             # train_acc = accuracy.eval(feed_dict={x: batch_x, y: batch_y, keep_prob:1})
             train_acc = predictor.sess.run(predictor.accuracy, feed_dict={predictor.input_ph: batch_x, \
                                                     predictor.label_ph: batch_y, predictor.action_ph: batch_a, predictor.keep_prob_ph: 1})
@@ -250,7 +253,7 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
             # batch_y = Y_train_shuffle[start:start + batch_size]
             batch_x = X_test_reshape[start:start + batch_size]
             batch_y = Y_test[start:start + batch_size]
-            batch_a = np.ones((batch_size, hidden_size))
+            batch_a = run_episode(batch_x, predictor, selector, batch_size, hidden_size)
             # test_acc = accuracy.eval(feed_dict={x: batch_x, y: batch_y, keep_prob:1})
             test_acc = predictor.sess.run(predictor.accuracy, feed_dict={predictor.input_ph: batch_x, \
                                                     predictor.label_ph: batch_y, predictor.action_ph: batch_a, predictor.keep_prob_ph: 1})
@@ -274,9 +277,22 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
             # batch_y = Y_train_shuffle[start:start + batch_size]
             batch_x = X_train_shuffle[start:start + batch_size]
             batch_y = Y_train_shuffle[start:start + batch_size]
-            batch_a = np.ones((batch_size, hidden_size))
+            # record states, actions.
+            batch_a = run_episode(batch_x, predictor, selector, batch_size, hidden_size)
             # run optimizer with batch
             # sess.run(train_step, feed_dict={x: batch_x, y: batch_y, keep_prob: 0.5})
+            batch_reward = predictor.sess.run(predictor.reward, feed_dict={predictor.input_ph: batch_x, \
+                                            predictor.label_ph: batch_y, predictor.action_ph: batch_a, keep_prob_ph: dropout})
+            # reward shaping here
+            """
+            pass
+            """
+            extended_reward = np.zeros((batch_size*hidden_size,))
+            for j in range(batch_size):
+                extended_reward[j*hidden_size : (j+1)*hidden_size] = batch_reward[j]
+
+            selector.sess.run(selector.train_op, feed_dict={selector.obs_ph: , \
+                                            selector.act_ph: , selector.adv_ph: extended_reward}) 
             predictor.sess.run(predictor.train_op, feed_dict={predictor.input_ph: batch_x, \
                                             predictor.label_ph: batch_y, predictor.action_ph: batch_a, keep_prob_ph: dropout})
 

@@ -41,11 +41,14 @@ class Selector(object):
         self.loss = tf.reduce_mean(-tf.reduce_sum(self.act_ph*tf.log(act_prob), reduction_indices=[1])*self.adv_ph)
         self.train_op = tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(self.loss)
     
-    def _sample_multinomial(self):
+    def _sample_multinomial(self, observation):
         """ Sample from distribution, given observation """
+        self.sess.run(self.act_prob, feed_dict={self.obs_ph: observation})
         return tf.multinomial(self.act_prob, 1)
 
-    def _sample_max(self):
+    def _sample_max(self, observation):
+        """ Sample via argmax, given observation """
+        self.sess.run(self.act_prob, feed_dict={self.obs_ph: observation})
         return tf.argmax(self.act_prob, 1)
 
     def _init_session(self):
