@@ -246,9 +246,9 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
             batch_x = X_train_reshape[start:start + batch_size]
             batch_y = Y_train[start:start + batch_size]
             # batch_a = np.ones((batch_size, hidden_size))
-            print(i)
+            # print(i)
             batch_a, _, _ = run_episode(batch_x, predictor, selector, batch_size, hidden_size)
-            print("over")
+            # print("over")
             # train_acc = accuracy.eval(feed_dict={x: batch_x, y: batch_y, keep_prob:1})
             train_acc = predictor.sess.run(predictor.accuracy, feed_dict={predictor.input_ph: batch_x, \
                                                     predictor.label_ph: batch_y, predictor.action_ph: batch_a, predictor.keep_prob_ph: 1})
@@ -338,7 +338,7 @@ if __name__ == "__main__":
     parser.add_argument('--hidden_size', type=int, help='hidden size for selection', default=10)
     parser.add_argument('--num_classes', type=int, help='number of class', default=3)
     parser.add_argument('--batch_size', type=int, help='batch size', default=256)
-    parser.add_argument('--epochs', type=int, help='epoch number', default=2)
+    parser.add_argument('--epochs', type=int, help='epoch number', default=20)
     parser.add_argument('--lr_predictor', type=float, help='learning rate of predictor network', default=1e-1)
     parser.add_argument('--lr_selector', type=float, help='learning rate of selector network', default=1e-3)
     parser.add_argument('--dropout', type=float, help='keep rate', default=0.5)
