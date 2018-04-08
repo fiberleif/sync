@@ -91,7 +91,7 @@ def run_episode(batch_x, predictor, selector, batch_size, hidden_size):
         position_vector = np.zeros((batch_size, hidden_size))
         position_vector[:,i] = 1
         state = np.concatenate((hidden_vector, binary_vector, position_vector), axis=1)
-        action = selector._sample_multinomial(state)
+        action = selector._sample_max(state)
         state_list.append(state)
         action_list.append(action)
         # print(state.shape)
@@ -131,7 +131,7 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
                 + "_train_dataset.csv"
     test_dataset_path = "/home/data/guoqing/dataset/timestep_" + str(timesteps) \
                 + "_test_dataset.csv"
-    save_path = "/home/data/guoqing/prediction/result/ourmodel_timestep_" + str(timesteps) \
+    save_path = "/home/data/guoqing/prediction/result/ourmodel_max_timestep_" + str(timesteps) \
                     + "_dp_" + str(dropout) + "_epoch_" + str(epochs) + ".csv"
 
     # Prepare train data.

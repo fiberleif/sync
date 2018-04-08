@@ -10,13 +10,13 @@ import numpy as np
 import tensorflow as tf
 
 class Selector(object):
-	"""NN-based Pattern Selector """
-	def __init__(self, hidden_size, lr_selector):
-		self.input_dim = 3*hidden_size
-		self.lr = lr_selector
-		self._build_graph()
+    """NN-based Pattern Selector """
+    def __init__(self, hidden_size, lr_selector):
+        self.input_dim = 3*hidden_size
+        self.lr = lr_selector
+        self._build_graph()
         self._init_session()
-
+    
     def _build_graph(self):
         """ Construct tensorflow graph, including loss function, init op and train op """
         self.g = tf.Graph()
@@ -35,26 +35,28 @@ class Selector(object):
         self.adv_ph = tf.placeholder(tf.float32, (None,), "advantages")
 
     def _selector_nn(self):
-        self.act_prob = tf.layers.dense(inputs=obs_ph, units=2, activation=tf.nn.softmax)
+        self.act_prob = tf.layers.dense(inputs=self.obs_ph, units=2, activation=tf.nn.softmax)
 
     def _loss_train_op(self):
-        self.loss = tf.reduce_mean(-tf.reduce_sum(self.act_ph*tf.log(act_prob), reduction_indices=[1])*self.adv_ph)
+        self.loss = tf.reduce_mean(-tf.reduce_sum(self.act_ph*tf.log(self.act_prob), reduction_indices=[1])*self.adv_ph)
         self.train_op = tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(self.loss)
     
     def _sample_multinomial(self, observation):
         """ Sample from distribution, given observation """
-        self.sess.run(self.act_prob, feed_dict={self.obs_ph: observation})
-        return tf.multinomial(self.act_prob, 1)
+        self.sample_mul = tf.multinomial(self.act_prob, 1)
+        return self.sess.run(self.sample_mul, feed_dict={self.obs_ph: observation})
+        
 
     def _sample_max(self, observation):
         """ Sample via argmax, given observation """
-        self.sess.run(self.act_prob, feed_dict={self.obs_ph: observation})
-        return tf.argmax(self.act_prob, 1)
+        self.sample_max = tf.argmax(self.act_prob, 1)
+        return self.sess.run(self.sample_max, feed_dict={self.obs_ph: observation})
+        
 
     def _init_session(self):
         self.config = tf.ConfigProto()
         self.config.gpu_options.allow_growth=True
-        self.sess = tf.Session(graph=self.g, config=config)
+        self.sess = tf.Session(graph=self.g, config=self.config)
         self.sess.run(self.init)
 
 

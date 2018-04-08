@@ -11,10 +11,10 @@ import tensorflow as tf
 
 class Predictor(object):
     """NN-based Trend Predictor"""
-	def __init__(self, timesteps, num_channels, hidden_size, num_classes, lr_predictor, dropout):
+    def __init__(self, timesteps, num_channels, hidden_size, num_classes, lr_predictor, dropout):
         """
         """
-		self.timesteps = timesteps
+        self.timesteps = timesteps
         self.num_channels = num_channels
         self.hidden_size = hidden_size
         self.num_classes = num_classes
@@ -39,7 +39,7 @@ class Predictor(object):
             self.init = tf.global_variables_initializer()
 
     def _placeholders(self):
-    """ Input placeholders """
+        """ Input placeholders """
 
         self.keep_prob_ph = tf.placeholder(tf.float32)
         # bn_flag = tf.placeholder(tf.bool, name="training")
@@ -48,33 +48,33 @@ class Predictor(object):
         self.action_ph = tf.placeholder(tf.float32, [None, self.hidden_size], 'action_sequence')
 
     def _predictor_nn(self):
-    """ Predictor network structure """
+        """ Predictor network structure """
         self.conv = tf.layers.conv2d(inputs=self.input_ph, filters=16, kernel_size= [3,1], activation=tf.nn.relu)
         self.flat = tf.contrib.layers.flatten(self.conv)
         self.dense = tf.layers.dense(inputs=self.flat, units=self.hidden_size, activation=tf.nn.relu)
-        self.dense_dropout = tf.nn.dropout(self.dense, keep_prob)
+        self.dense_dropout = tf.nn.dropout(self.dense, self.keep_prob_ph)
         self.dense_sel = self.dense_dropout*self.action_ph
-        self.trend_prob = tf.layers.dense(inputs=dense_sel, units=self.num_classes, activation=tf.nn.softmax)
+        self.trend_prob = tf.layers.dense(inputs=self.dense_sel, units=self.num_classes, activation=tf.nn.softmax)
 
     def _loss_train_op(self):
-        self.loss = tf.reduce_mean(-tf.reduce_sum(y*tf.log(self.trend_prob), reduction_indices=[1]))
+        self.loss = tf.reduce_mean(-tf.reduce_sum(self.label_ph*tf.log(self.trend_prob), reduction_indices=[1]))
         self.train_op = tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(self.loss)
     
     def _reward_test_op(self):
-        self.reward = tf.reduce_sum(y*tf.log(self.trend_prob), reduction_indices=[1])
+        self.reward = tf.reduce_sum(self.label_ph*tf.log(self.trend_prob), reduction_indices=[1])
 
     def _accuracy_test_op(self):
-        self.acc_bool = tf.equal(tf.argmax(trend_prob,1), tf.argmax(label_ph,1))
+        self.acc_bool = tf.equal(tf.argmax(self.trend_prob,1), tf.argmax(self.label_ph,1))
         self.accuracy = tf.reduce_mean(tf.cast(self.acc_bool, tf.float32))
 
     def _init_session(self):
         self.config = tf.ConfigProto()
         self.config.gpu_options.allow_growth=True
-        self.sess = tf.Session(graph=self.g, config=config)
+        self.sess = tf.Session(graph=self.g, config=self.config)
         self.sess.run(self.init)
 
     def _get_hidden_state(self, batch_x):
-        return self.sess.run(self.dense, feed_dict={input_ph: batch_x})
+        return self.sess.run(self.dense, feed_dict={self.input_ph: batch_x})
 
     # # placeholder
     # keep_prob = tf.placeholder(tf.float32)
