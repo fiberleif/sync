@@ -91,7 +91,7 @@ def run_episode(batch_x, predictor, selector, batch_size, hidden_size):
         position_vector = np.zeros((batch_size, hidden_size))
         position_vector[:,i] = 1
         state = np.concatenate((hidden_vector, binary_vector, position_vector), axis=1)
-        action = selector._sample_max(state).reshape(batch_size, 1)
+        action = selector._sample_max(state).reshape((batch_size, 1))
         state_list.append(state)
         action_list.append(action)
         # print(state.shape)
@@ -338,7 +338,7 @@ if __name__ == "__main__":
     parser.add_argument('--hidden_size', type=int, help='hidden size for selection', default=10)
     parser.add_argument('--num_classes', type=int, help='number of class', default=3)
     parser.add_argument('--batch_size', type=int, help='batch size', default=256)
-    parser.add_argument('--epochs', type=int, help='epoch number', default=2)
+    parser.add_argument('--epochs', type=int, help='epoch number', default=1)
     parser.add_argument('--lr_predictor', type=float, help='learning rate of predictor network', default=1e-1)
     parser.add_argument('--lr_selector', type=float, help='learning rate of selector network', default=1e-3)
     parser.add_argument('--dropout', type=float, help='keep rate', default=0.5)
