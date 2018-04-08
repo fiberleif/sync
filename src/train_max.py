@@ -91,7 +91,7 @@ def run_episode(batch_x, predictor, selector, batch_size, hidden_size):
         position_vector = np.zeros((batch_size, hidden_size))
         position_vector[:,i] = 1
         state = np.concatenate((hidden_vector, binary_vector, position_vector), axis=1)
-        action = selector._sample_max(state)
+        action = selector._sample_max(state).reshape(batch_size, 1)
         state_list.append(state)
         action_list.append(action)
         # print(state.shape)
@@ -106,7 +106,7 @@ def run_episode(batch_x, predictor, selector, batch_size, hidden_size):
     # convert actions from (batch_size*hidden_size, 1) to (batch_size*hidden_size, 2)
     actions_ps = np.zeros((batch_size*hidden_size,2))
     for i in range(actions_pre.shape[0]):
-        if(actions_pre[i] == 1):
+        if(actions_pre[i,0] == 1):
             actions_ps[i, 1] = 1
         else:
             actions_ps[i, 0] = 1

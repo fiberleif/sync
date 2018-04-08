@@ -49,6 +49,7 @@ class Selector(object):
 
     def _sample_max(self, observation):
         """ Sample via argmax, given observation """
+        """ return other type with comparison to multinomial"""
         self.sample_max = tf.argmax(self.act_prob, 1)
         return self.sess.run(self.sample_max, feed_dict={self.obs_ph: observation})
         
