@@ -11,6 +11,7 @@ import sys
 import keras
 import signal
 import argparse
+import time
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -270,13 +271,18 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
             # batch_y = Y_train_shuffle[start:start + batch_size]
             batch_x = X_test_reshape[start:start + batch_size]
             batch_y = Y_test[start:start + batch_size]
+
+            begin_time = time.clock()
             batch_a, _, _ = run_episode(batch_x, predictor, selector, batch_size, hidden_size)
             # test_acc = accuracy.eval(feed_dict={x: batch_x, y: batch_y, keep_prob:1})
+            sample_end_time = time.clock()
             test_acc = predictor.sess.run(predictor.accuracy, feed_dict={predictor.input_ph: batch_x, \
                                                     predictor.label_ph: batch_y, predictor.action_ph: batch_a, predictor.keep_prob_ph: 1})
             # test_loss = cross_entropy_loss.eval(feed_dict={x: batch_x, y: batch_y, keep_prob:1})
             test_loss = predictor.sess.run(predictor.loss, feed_dict={predictor.input_ph: batch_x, \
                                                     predictor.label_ph: batch_y, predictor.action_ph: batch_a, predictor.keep_prob_ph: 1})
+            test_end_time = time.clock()
+            print("sample:" + str(sample_end_time-begin_time) + " test:" + str(test_end_time-sample_end_time))
             test_acc_sum += test_acc
             test_loss_sum += test_loss
         
@@ -296,7 +302,9 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
             batch_x = X_train_shuffle[start:start + batch_size]
             batch_y = Y_train_shuffle[start:start + batch_size]
             # record states, actions.
+            begin_time = time.clock()
             batch_a, observations_ps, actions_ps = run_episode(batch_x, predictor, selector, batch_size, hidden_size)
+            sample_end_time = time.clock()
             # run optimizer with batch
             # sess.run(train_step, feed_dict={x: batch_x, y: batch_y, keep_prob: 0.5})
             batch_reward = predictor.sess.run(predictor.reward, feed_dict={predictor.input_ph: batch_x, \
@@ -327,7 +335,8 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
                                             selector.act_ph: actions_ps, selector.adv_ph: extended_reward}) 
             predictor.sess.run(predictor.train_op, feed_dict={predictor.input_ph: batch_x, \
                                             predictor.label_ph: batch_y, predictor.action_ph: batch_a, predictor.keep_prob_ph: dropout})
-
+            train_end_time = time.clock()
+            print("sample:" + str(sample_end_time-begin_time) + " train:" + str(train_end_time-sample_end_time))
 
     result = pd.DataFrame({'train_acc': train_acc_list, 'test_acc': test_acc_list, 'train_loss': train_loss_list ,'test_loss': test_loss_list})
     result.to_csv(save_path, index=False)
