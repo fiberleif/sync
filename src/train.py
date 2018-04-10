@@ -160,7 +160,7 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
     print("train batch number:", train_batch_num)
     print("test batch number:", test_batch_num)
    
-    for e in range(epochs):
+    for e in range(20):
         # shuffle training data
         shuffle_indices = np.random.permutation(np.arange(train_size))
         X_train_shuffle = X_train_reshape[shuffle_indices]
@@ -214,8 +214,8 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
 
         print("epoch %d: train_acc %f, test_acc %f, train_loss %f, test_loss %f" % (e, train_acc_avg, test_acc_avg, train_loss_avg, test_loss_avg))
 
-        #Minibatch training
-        for i in range(0, train_size // batch_size):
+        # Minibatch training
+        for i in range(0, train_batch_num):
             start = i * batch_size
             # batch_x = X_train_shuffle[start:start + batch_size]
             # batch_y = Y_train_shuffle[start:start + batch_size]
@@ -239,7 +239,7 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
         train_loss_sum = 0
         test_loss_sum = 0
 
-        for i in range(0, train_batch_num):
+        for i in range(0, 100):
             start = i * batch_size
             # batch_x = X_train_shuffle[start:start + batch_size]
             # batch_y = Y_train_shuffle[start:start + batch_size]
@@ -264,6 +264,7 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
         train_loss_list.append(train_loss_avg)
 
         for i in range(0, test_batch_num):
+            print("epoch:" + str(e) + " test process:" + str(i) + "/" + str(test_batch_num))
             start = i * batch_size
             # batch_x = X_train_shuffle[start:start + batch_size]
             # batch_y = Y_train_shuffle[start:start + batch_size]
@@ -286,8 +287,9 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
 
         print("epoch %d: train_acc %f, test_acc %f, train_loss %f, test_loss %f" % (e, train_acc_avg, test_acc_avg, train_loss_avg, test_loss_avg))
 
-        #Minibatch training
-        for i in range(0, train_size // batch_size):
+        # Minibatch training
+        for i in range(0, train_batch_num):
+            print("epoch:" + str(e) + " train process:" + str(i) + "/" + str(train_batch_num))
             start = i * batch_size
             # batch_x = X_train_shuffle[start:start + batch_size]
             # batch_y = Y_train_shuffle[start:start + batch_size]
@@ -338,7 +340,7 @@ if __name__ == "__main__":
     parser.add_argument('--hidden_size', type=int, help='hidden size for selection', default=10)
     parser.add_argument('--num_classes', type=int, help='number of class', default=3)
     parser.add_argument('--batch_size', type=int, help='batch size', default=256)
-    parser.add_argument('--epochs', type=int, help='epoch number', default=20)
+    parser.add_argument('--epochs', type=int, help='epoch number', default=100)
     parser.add_argument('--lr_predictor', type=float, help='learning rate of predictor network', default=1e-1)
     parser.add_argument('--lr_selector', type=float, help='learning rate of selector network', default=1e-3)
     parser.add_argument('--dropout', type=float, help='keep rate', default=0.5)
