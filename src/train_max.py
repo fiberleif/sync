@@ -258,8 +258,8 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
             train_acc_sum += train_acc
             train_loss_sum += train_loss
         
-        train_acc_avg = train_acc_sum / train_batch_num
-        train_loss_avg = train_loss_sum / train_batch_num 
+        train_acc_avg = train_acc_sum / 100
+        train_loss_avg = train_loss_sum / 100 
         train_acc_list.append(train_acc_avg)
         train_loss_list.append(train_loss_avg)
 
