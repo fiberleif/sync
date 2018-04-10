@@ -161,7 +161,7 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
     print("train batch number:", train_batch_num)
     print("test batch number:", test_batch_num)
    
-    for e in range(20):
+    for e in range(5):
         # shuffle training data
         shuffle_indices = np.random.permutation(np.arange(train_size))
         X_train_shuffle = X_train_reshape[shuffle_indices]
@@ -265,7 +265,7 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
         train_loss_list.append(train_loss_avg)
 
         for i in range(0, test_batch_num):
-            print("epoch:" + str(e) + " test process:" + str(i) + "/" + str(test_batch_num))
+            # print("epoch:" + str(e) + " test process:" + str(i) + "/" + str(test_batch_num))
             start = i * batch_size
             # batch_x = X_train_shuffle[start:start + batch_size]
             # batch_y = Y_train_shuffle[start:start + batch_size]
@@ -295,7 +295,7 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
 
         # Minibatch training
         for i in range(0, train_batch_num):
-            print("epoch:" + str(e) + " train process:" + str(i) + "/" + str(train_batch_num))
+            # print("epoch:" + str(e) + " train process:" + str(i) + "/" + str(train_batch_num))
             start = i * batch_size
             # batch_x = X_train_shuffle[start:start + batch_size]
             # batch_y = Y_train_shuffle[start:start + batch_size]
