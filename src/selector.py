@@ -26,7 +26,7 @@ class Selector(object):
             self._loss_train_op()
             # self._sample()
             self._sample_multinomial()
-            self._sample_max()
+            self._sample_maximum()
             self.init = tf.global_variables_initializer()
 
     def _placeholders(self):
@@ -47,7 +47,7 @@ class Selector(object):
         """ Sample from distribution, given observation """
         self.sample_mul = tf.multinomial(self.act_prob, 1)
         
-    def _sample_max(self):
+    def _sample_maximum(self):
         """ Sample via argmax, given observation """
         """ return other type with comparison to multinomial"""
         self.sample_max = tf.argmax(self.act_prob, 1)
@@ -61,7 +61,7 @@ class Selector(object):
     def sample_multinomial(self, observation):
         return self.sess.run(self.sample_mul, feed_dict={self.obs_ph: observation})
 
-    def sample_max(self, observation):
+    def sample_maximum(self, observation):
         return self.sess.run(self.sample_max, feed_dict={self.obs_ph: observation})
 
 
