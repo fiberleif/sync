@@ -25,6 +25,8 @@ class Selector(object):
             self._selector_nn()
             self._loss_train_op()
             # self._sample()
+            self._sample_multinomial()
+            self._sample_max()
             self.init = tf.global_variables_initializer()
 
     def _placeholders(self):
@@ -41,24 +43,28 @@ class Selector(object):
         self.loss = tf.reduce_mean(-tf.reduce_sum(self.act_ph*tf.log(self.act_prob), reduction_indices=[1])*self.adv_ph)
         self.train_op = tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(self.loss)
     
-    def _sample_multinomial(self, observation):
+    def _sample_multinomial(self):
         """ Sample from distribution, given observation """
         self.sample_mul = tf.multinomial(self.act_prob, 1)
-        return self.sess.run(self.sample_mul, feed_dict={self.obs_ph: observation})
         
-
-    def _sample_max(self, observation):
+    def _sample_max(self):
         """ Sample via argmax, given observation """
         """ return other type with comparison to multinomial"""
         self.sample_max = tf.argmax(self.act_prob, 1)
-        return self.sess.run(self.sample_max, feed_dict={self.obs_ph: observation})
-        
-
+    
     def _init_session(self):
         self.config = tf.ConfigProto()
         self.config.gpu_options.allow_growth=True
         self.sess = tf.Session(graph=self.g, config=self.config)
         self.sess.run(self.init)
+
+    def sample_multinomial(self, observation):
+        return self.sess.run(self.sample_mul, feed_dict={self.obs_ph: observation})
+
+    def sample_max(self, observation):
+        return self.sess.run(self.sample_max, feed_dict={self.obs_ph: observation})
+
+
 
 
  # # placeholder

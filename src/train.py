@@ -92,7 +92,7 @@ def run_episode(batch_x, predictor, selector, batch_size, hidden_size):
         position_vector = np.zeros((batch_size, hidden_size))
         position_vector[:,i] = 1
         state = np.concatenate((hidden_vector, binary_vector, position_vector), axis=1)
-        action = selector._sample_multinomial(state).reshape((batch_size, 1))
+        action = selector.sample_multinomial(state).reshape((batch_size, 1))
         state_list.append(state)
         action_list.append(action)
         # print(state.shape)
@@ -240,7 +240,7 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
         train_loss_sum = 0
         test_loss_sum = 0
 
-        for i in range(0, 100):
+        for i in range(0, train_batch_num):
             start = i * batch_size
             # batch_x = X_train_shuffle[start:start + batch_size]
             # batch_y = Y_train_shuffle[start:start + batch_size]
@@ -259,8 +259,8 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
             train_acc_sum += train_acc
             train_loss_sum += train_loss
         
-        train_acc_avg = train_acc_sum / 100
-        train_loss_avg = train_loss_sum / 100 
+        train_acc_avg = train_acc_sum / train_batch_num
+        train_loss_avg = train_loss_sum / train_batch_num
         train_acc_list.append(train_acc_avg)
         train_loss_list.append(train_loss_avg)
 
@@ -272,17 +272,17 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
             batch_x = X_test_reshape[start:start + batch_size]
             batch_y = Y_test[start:start + batch_size]
 
-            begin_time = time.clock()
+            # begin_time = time.clock()
             batch_a, _, _ = run_episode(batch_x, predictor, selector, batch_size, hidden_size)
             # test_acc = accuracy.eval(feed_dict={x: batch_x, y: batch_y, keep_prob:1})
-            sample_end_time = time.clock()
+            # sample_end_time = time.clock()
             test_acc = predictor.sess.run(predictor.accuracy, feed_dict={predictor.input_ph: batch_x, \
                                                     predictor.label_ph: batch_y, predictor.action_ph: batch_a, predictor.keep_prob_ph: 1})
             # test_loss = cross_entropy_loss.eval(feed_dict={x: batch_x, y: batch_y, keep_prob:1})
             test_loss = predictor.sess.run(predictor.loss, feed_dict={predictor.input_ph: batch_x, \
                                                     predictor.label_ph: batch_y, predictor.action_ph: batch_a, predictor.keep_prob_ph: 1})
-            test_end_time = time.clock()
-            print("sample:" + str(sample_end_time-begin_time) + " test:" + str(test_end_time-sample_end_time))
+            # test_end_time = time.clock()
+            # print("sample:" + str(sample_end_time-begin_time) + " test:" + str(test_end_time-sample_end_time))
             test_acc_sum += test_acc
             test_loss_sum += test_loss
         
@@ -302,9 +302,9 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
             batch_x = X_train_shuffle[start:start + batch_size]
             batch_y = Y_train_shuffle[start:start + batch_size]
             # record states, actions.
-            begin_time = time.clock()
+            # begin_time = time.clock()
             batch_a, observations_ps, actions_ps = run_episode(batch_x, predictor, selector, batch_size, hidden_size)
-            sample_end_time = time.clock()
+            # sample_end_time = time.clock()
             # run optimizer with batch
             # sess.run(train_step, feed_dict={x: batch_x, y: batch_y, keep_prob: 0.5})
             batch_reward = predictor.sess.run(predictor.reward, feed_dict={predictor.input_ph: batch_x, \
@@ -335,8 +335,8 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
                                             selector.act_ph: actions_ps, selector.adv_ph: extended_reward}) 
             predictor.sess.run(predictor.train_op, feed_dict={predictor.input_ph: batch_x, \
                                             predictor.label_ph: batch_y, predictor.action_ph: batch_a, predictor.keep_prob_ph: dropout})
-            train_end_time = time.clock()
-            print("sample:" + str(sample_end_time-begin_time) + " train:" + str(train_end_time-sample_end_time))
+            # train_end_time = time.clock()
+            # print("sample:" + str(sample_end_time-begin_time) + " train:" + str(train_end_time-sample_end_time))
 
     result = pd.DataFrame({'train_acc': train_acc_list, 'test_acc': test_acc_list, 'train_loss': train_loss_list ,'test_loss': test_loss_list})
     result.to_csv(save_path, index=False)
