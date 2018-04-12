@@ -61,6 +61,10 @@ def prepare_data(timesteps, num_channels, num_classes, train_dataset_path, test_
     # img_cols = num_channels
     X_train_reshape = X_train_norm.reshape(X_train_norm.shape[0], timesteps, num_channels, 1)
     X_test_reshape = X_test_norm.reshape(X_test_norm.shape[0], timesteps, num_channels, 1)
+
+    # # MLP
+    # X_train_reshape = X_train_norm.reshape(X_train_norm.shape[0], timesteps*num_channels)
+    # X_test_reshape = X_test_norm.reshape(X_test_norm.shape[0], timesteps*num_channels)
     # input_shape = (img_rows, img_cols, 1)
     return X_train_reshape, Y_train, X_test_reshape, Y_test, train_size, test_size
 
@@ -132,8 +136,9 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
                 + "_train_dataset.csv"
     test_dataset_path = "/home/data/guoqing/dataset/timestep_" + str(timesteps) \
                 + "_test_dataset.csv"
-    save_path = "/home/data/guoqing/prediction/result/ourmodel_timestep_" + str(timesteps) \
+    save_path = "/home/data/guoqing/prediction/result/cnn_baseline_bigger_timestep_" + str(timesteps) \
                     + "_dp_" + str(dropout) + "_epoch_" + str(epochs) + ".csv"
+    predictor_update = 10
 
     # Prepare train data.
     X_train_reshape, Y_train, X_test_reshape, Y_test, train_size, test_size = prepare_data(timesteps, num_channels, \
@@ -161,7 +166,7 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
     print("train batch number:", train_batch_num)
     print("test batch number:", test_batch_num)
    
-    for e in range(5):
+    for e in range(50):
         # shuffle training data
         shuffle_indices = np.random.permutation(np.arange(train_size))
         X_train_shuffle = X_train_reshape[shuffle_indices]
@@ -296,7 +301,7 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
         # Minibatch training
         for i in range(0, train_batch_num):
             # print("epoch:" + str(e) + " train process:" + str(i) + "/" + str(train_batch_num))
-            start = i * batch_size
+            # start = i * batch_size
             # batch_x = X_train_shuffle[start:start + batch_size]
             # batch_y = Y_train_shuffle[start:start + batch_size]
             batch_x = X_train_shuffle[start:start + batch_size]
@@ -331,10 +336,13 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
                 for k in range(hidden_size):
                     extended_reward[j+k*batch_size] = batch_reward[j]
 
-            selector.sess.run(selector.train_op, feed_dict={selector.obs_ph: observations_ps, \
+            if(e % predictor_update == 0):
+                predictor.sess.run(predictor.train_op, feed_dict={predictor.input_ph: batch_x, \
+                                            predictor.label_ph: batch_y, predictor.action_ph: batch_a, predictor.keep_prob_ph: dropout}) 
+            else:
+                selector.sess.run(selector.train_op, feed_dict={selector.obs_ph: observations_ps, \
                                             selector.act_ph: actions_ps, selector.adv_ph: extended_reward}) 
-            predictor.sess.run(predictor.train_op, feed_dict={predictor.input_ph: batch_x, \
-                                            predictor.label_ph: batch_y, predictor.action_ph: batch_a, predictor.keep_prob_ph: dropout})
+
             # train_end_time = time.clock()
             # print("sample:" + str(sample_end_time-begin_time) + " train:" + str(train_end_time-sample_end_time))
 
@@ -349,10 +357,10 @@ if __name__ == "__main__":
     parser.add_argument('--hidden_size', type=int, help='hidden size for selection', default=10)
     parser.add_argument('--num_classes', type=int, help='number of class', default=3)
     parser.add_argument('--batch_size', type=int, help='batch size', default=256)
-    parser.add_argument('--epochs', type=int, help='epoch number', default=100)
+    parser.add_argument('--epochs', type=int, help='epoch number', default=40)
     parser.add_argument('--lr_predictor', type=float, help='learning rate of predictor network', default=1e-1)
     parser.add_argument('--lr_selector', type=float, help='learning rate of selector network', default=1e-3)
-    parser.add_argument('--dropout', type=float, help='keep rate', default=0.5)
+    parser.add_argument('--dropout', type=float, help='keep rate', default=1)
 
     args = parser.parse_args()
     main(**vars(args))

@@ -44,14 +44,21 @@ class Predictor(object):
         self.keep_prob_ph = tf.placeholder(tf.float32)
         # bn_flag = tf.placeholder(tf.bool, name="training")
         self.input_ph = tf.placeholder(tf.float32, [None, self.timesteps, self.num_channels, 1],'input_x')
+        # MLP
+        # self.input_ph = tf.placeholder(tf.float32, [None, self.timesteps*self.num_channels],'input_x')
         self.label_ph = tf.placeholder(tf.float32, [None, self.num_classes], 'label_y')
         self.action_ph = tf.placeholder(tf.float32, [None, self.hidden_size], 'action_sequence')
 
     def _predictor_nn(self):
         """ Predictor network structure """
-        self.conv = tf.layers.conv2d(inputs=self.input_ph, filters=16, kernel_size= [3,1], activation=tf.nn.relu)
+        self.conv = tf.layers.conv2d(inputs=self.input_ph, filters=128, kernel_size= [3,1], activation=tf.nn.relu)
+        # self.conv = tf.layers.conv2d(inputs=self.input_ph, filters=16, kernel_size= [3,1], activation=tf.nn.sigmoid)
         self.flat = tf.contrib.layers.flatten(self.conv)
         self.dense = tf.layers.dense(inputs=self.flat, units=self.hidden_size, activation=tf.nn.relu)
+        # self.dense = tf.layers.dense(inputs=self.flat, units=self.hidden_size, activation=tf.nn.sigmoid)
+
+        # MLP
+        # self.dense = tf.layers.dense(inputs=self.input_ph, units=self.hidden_size, activation=tf.nn.relu)
         self.dense_dropout = tf.nn.dropout(self.dense, self.keep_prob_ph)
         self.dense_sel = self.dense_dropout*self.action_ph
         self.trend_prob = tf.layers.dense(inputs=self.dense_sel, units=self.num_classes, activation=tf.nn.softmax)
