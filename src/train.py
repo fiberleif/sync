@@ -136,7 +136,7 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
                 + "_train_dataset.csv"
     test_dataset_path = "/home/data/guoqing/dataset/timestep_" + str(timesteps) \
                 + "_test_dataset.csv"
-    save_path = "/home/data/guoqing/prediction/result/cnn_baseline_bigger_timestep_" + str(timesteps) \
+    save_path = "/home/data/guoqing/prediction/result/ourmodel_cnn_timestep_" + str(timesteps) \
                     + "_dp_" + str(dropout) + "_epoch_" + str(epochs) + ".csv"
     predictor_update = 10
 
@@ -301,7 +301,7 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
         # Minibatch training
         for i in range(0, train_batch_num):
             # print("epoch:" + str(e) + " train process:" + str(i) + "/" + str(train_batch_num))
-            # start = i * batch_size
+            start = i * batch_size
             # batch_x = X_train_shuffle[start:start + batch_size]
             # batch_y = Y_train_shuffle[start:start + batch_size]
             batch_x = X_train_shuffle[start:start + batch_size]
@@ -357,10 +357,10 @@ if __name__ == "__main__":
     parser.add_argument('--hidden_size', type=int, help='hidden size for selection', default=10)
     parser.add_argument('--num_classes', type=int, help='number of class', default=3)
     parser.add_argument('--batch_size', type=int, help='batch size', default=256)
-    parser.add_argument('--epochs', type=int, help='epoch number', default=40)
+    parser.add_argument('--epochs', type=int, help='epoch number', default=100)
     parser.add_argument('--lr_predictor', type=float, help='learning rate of predictor network', default=1e-1)
     parser.add_argument('--lr_selector', type=float, help='learning rate of selector network', default=1e-3)
-    parser.add_argument('--dropout', type=float, help='keep rate', default=1)
+    parser.add_argument('--dropout', type=float, help='keep rate', default=0.5)
 
     args = parser.parse_args()
     main(**vars(args))
