@@ -51,9 +51,10 @@ class Predictor(object):
 
     def _predictor_nn(self):
         """ Predictor network structure """
-        self.conv = tf.layers.conv2d(inputs=self.input_ph, filters=16, kernel_size= [3,1], activation=tf.nn.relu)
+        self.conv1 = tf.layers.conv2d(inputs=self.input_ph, filters=16, kernel_size= [3,1], activation=tf.nn.relu)
         # self.conv = tf.layers.conv2d(inputs=self.input_ph, filters=16, kernel_size= [3,1], activation=tf.nn.sigmoid)
-        self.flat = tf.contrib.layers.flatten(self.conv)
+        # self.conv2 = tf.layers.conv2d(inputs=self.conv1, filters=16, kernel_size= [3,1], activation=tf.nn.relu)
+        self.flat = tf.contrib.layers.flatten(self.conv1)
         self.dense = tf.layers.dense(inputs=self.flat, units=self.hidden_size, activation=tf.nn.relu)
         # self.dense = tf.layers.dense(inputs=self.flat, units=self.hidden_size, activation=tf.nn.sigmoid)
 
