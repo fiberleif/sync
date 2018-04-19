@@ -136,8 +136,8 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
                 + "_train_dataset.csv"
     test_dataset_path = "/home/data/guoqing/dataset/timestep_" + str(timesteps) \
                 + "_test_dataset.csv"
-    save_path = "/home/data/guoqing/prediction/result/model_1cnn_timestep_" + str(timesteps) \
-                    + "_dp_" + str(dropout) + "_epoch_" + str(epochs) + ".csv"
+    save_path = "/home/data/guoqing/prediction/result/model_1cnn_3dense_timestep_" + str(timesteps) \
+                     + "_dp_" + str(dropout) + ".csv"
     update_len = 20
     predictor_len = 9
     # Prepare train data.
@@ -152,6 +152,7 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
     with predictor.g.as_default():
         num_params = 0
         for variable in tf.trainable_variables():
+            print(variable.name)
             shape = variable.get_shape()
             num_params += reduce(mul, [dim.value for dim in shape], 1)
         print("predictor num_params", num_params)
@@ -159,6 +160,7 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
     with selector.g.as_default():
         num_params = 0
         for variable in tf.trainable_variables():
+            print(variable.name)
             shape = variable.get_shape()
             num_params += reduce(mul, [dim.value for dim in shape], 1)
         print("selector num_params", num_params)
@@ -170,12 +172,15 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
     test_loss_list = []
     train_spa_list = []
     test_spa_list = []
+    train_reward_list = []
+    test_acc_baseline_list = []
+
     train_batch_num = train_size // batch_size
     test_batch_num = test_size // batch_size
     print("train batch number:", train_batch_num)
     print("test batch number:", test_batch_num)
    
-    for e in range(20):
+    for e in range(5):
         # shuffle training data
         shuffle_indices = np.random.permutation(np.arange(train_size))
         X_train_shuffle = X_train_reshape[shuffle_indices]
@@ -226,9 +231,14 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
         test_loss_avg = test_loss_sum / test_batch_num 
         test_acc_list.append(test_acc_avg)
         test_loss_list.append(test_loss_avg)
+        train_spa_list.append(1)
+        test_spa_list.append(1)
+        train_reward_list.append(0)
+        test_acc_baseline_list.append(test_acc_avg)
 
         print("epoch %d: train_acc %f, test_acc %f, train_loss %f, test_loss %f" % (e, train_acc_avg, test_acc_avg, train_loss_avg, test_loss_avg))
-
+        # print("epoch %d: train_acc %f, test_acc %f, test_baseline_acc %f, train_loss %f, test_loss %f, train_spa %f, test_spa %f" % \
+        #                                         (e, train_acc_avg, test_acc_avg, test_acc_baseline_avg, train_loss_avg, test_loss_avg, train_spa_avg, test_spa_avg))
         # Minibatch training
         for i in range(0, train_batch_num):
             start = i * batch_size
@@ -243,18 +253,20 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
                                             predictor.label_ph: batch_y, predictor.action_ph: batch_a, predictor.keep_prob_ph: dropout})
 
 
-    # Joint-train trend predictor & pattern selector
+    # Pre-train pattern selector
     for e in range(epochs):
         # shuffle training data
         shuffle_indices = np.random.permutation(np.arange(train_size))
         X_train_shuffle = X_train_reshape[shuffle_indices]
         Y_train_shuffle = Y_train[shuffle_indices]
         train_acc_sum = 0
-        test_acc_sum = 0 
+        test_acc_sum = 0
+        test_acc_baseline_sum = 0 
         train_loss_sum = 0
         test_loss_sum = 0
         train_spa_sum = 0
         test_spa_sum = 0
+        train_reward_sum = 0
 
         for i in range(0, train_batch_num):
             start = i * batch_size
@@ -266,6 +278,8 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
             # print(i)
             batch_a, _, _ = run_episode(batch_x, predictor, selector, batch_size, hidden_size)
             train_spa_sum += np.mean(batch_a)
+            # batch_one = np.ones((batch_size, hidden_size))
+            
             # print("over")
             # train_acc = accuracy.eval(feed_dict={x: batch_x, y: batch_y, keep_prob:1})
             train_acc = predictor.sess.run(predictor.accuracy, feed_dict={predictor.input_ph: batch_x, \
@@ -294,8 +308,11 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
             # begin_time = time.clock()
             batch_a, _, _ = run_episode(batch_x, predictor, selector, batch_size, hidden_size)
             test_spa_sum += np.mean(batch_a)
+            batch_one = np.ones((batch_size, hidden_size))
             # test_acc = accuracy.eval(feed_dict={x: batch_x, y: batch_y, keep_prob:1})
             # sample_end_time = time.clock()
+            test_acc_baseline = predictor.sess.run(predictor.accuracy, feed_dict={predictor.input_ph: batch_x, \
+                                                    predictor.label_ph: batch_y, predictor.action_ph: batch_one, predictor.keep_prob_ph: 1})
             test_acc = predictor.sess.run(predictor.accuracy, feed_dict={predictor.input_ph: batch_x, \
                                                     predictor.label_ph: batch_y, predictor.action_ph: batch_a, predictor.keep_prob_ph: 1})
             # test_loss = cross_entropy_loss.eval(feed_dict={x: batch_x, y: batch_y, keep_prob:1})
@@ -305,16 +322,19 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
             # print("sample:" + str(sample_end_time-begin_time) + " test:" + str(test_end_time-sample_end_time))
             test_acc_sum += test_acc
             test_loss_sum += test_loss
+            test_acc_baseline_sum += test_acc_baseline
         
         test_acc_avg = test_acc_sum / test_batch_num
         test_loss_avg = test_loss_sum / test_batch_num
         test_spa_avg = test_spa_sum / test_batch_num
+        test_acc_baseline_avg = test_acc_baseline_sum / test_batch_num
         test_acc_list.append(test_acc_avg)
         test_loss_list.append(test_loss_avg)
         test_spa_list.append(test_spa_avg)
+        test_acc_baseline_list.append(test_acc_baseline_avg)
 
-        print("epoch %d: train_acc %f, test_acc %f, train_loss %f, test_loss %f, train_spa %f, test_spa %f" % \
-                                                (e, train_acc_avg, test_acc_avg, train_loss_avg, test_loss_avg, train_spa_avg, test_spa_avg))
+        print("epoch %d: train_acc %f, test_acc %f, test_baseline_acc %f, train_loss %f, test_loss %f, train_spa %f, test_spa %f" % \
+                                                (e, train_acc_avg, test_acc_avg, test_acc_baseline_avg, train_loss_avg, test_loss_avg, train_spa_avg, test_spa_avg))
 
         # Minibatch training
         for i in range(0, train_batch_num):
@@ -331,41 +351,49 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
             # run optimizer with batch
             # sess.run(train_step, feed_dict={x: batch_x, y: batch_y, keep_prob: 0.5})
             batch_reward = predictor.sess.run(predictor.reward, feed_dict={predictor.input_ph: batch_x, \
-                                            predictor.label_ph: batch_y, predictor.action_ph: batch_a, predictor.keep_prob_ph: dropout})
+                                            predictor.label_ph: batch_y, predictor.action_ph: batch_a, predictor.keep_prob_ph: 1})
             # reward shaping here
             """
             pass
             """
-            """
+            
             # v1-non-selected baseline
             batch_one = np.ones((batch_size, hidden_size))
             batch_reward_bias = predictor.sess.run(predictor.reward, feed_dict={predictor.input_ph: batch_x, \
-                                            predictor.label_ph: batch_y, predictor.action_ph: batch_one, predictor.keep_prob_ph: dropout})
+                                            predictor.label_ph: batch_y, predictor.action_ph: batch_one, predictor.keep_prob_ph: 1})
             batch_reward -= batch_reward_bias
-            """
+        
             """
             # v2-batch baseline
             batch_reward_bias = np.mean(batch_reward)
             batch_reward -= batch_reward_bias
             """
+
+            train_reward = np.mean(batch_reward)
+            train_reward_sum += train_reward
+
             extended_reward = np.zeros((batch_size*hidden_size,))
             for j in range(batch_size):
                 # extended_reward[j*hidden_size : (j+1)*hidden_size] = batch_reward[j]
                 for k in range(hidden_size):
                     extended_reward[j+k*batch_size] = batch_reward[j]
 
-            if(e % update_len <= predictor_len):
-                predictor.sess.run(predictor.train_op, feed_dict={predictor.input_ph: batch_x, \
-                                            predictor.label_ph: batch_y, predictor.action_ph: batch_a, predictor.keep_prob_ph: dropout}) 
-            else:
-                selector.sess.run(selector.train_op, feed_dict={selector.obs_ph: observations_ps, \
+            # if(e % update_len <= predictor_len):
+            #     predictor.sess.run(predictor.train_op, feed_dict={predictor.input_ph: batch_x, \
+            #                                 predictor.label_ph: batch_y, predictor.action_ph: batch_a, predictor.keep_prob_ph: 1}) 
+            # else:
+            #     selector.sess.run(selector.train_op, feed_dict={selector.obs_ph: observations_ps, \
+            #                                 selector.act_ph: actions_ps, selector.adv_ph: extended_reward}) 
+            
+            # Warm-start for selector
+            selector.sess.run(selector.train_op, feed_dict={selector.obs_ph: observations_ps, \
                                             selector.act_ph: actions_ps, selector.adv_ph: extended_reward}) 
+        train_reward_avg = train_reward_sum / train_batch_num
+        train_reward_list.append(train_reward_avg)
+        print("epoch %d: train_reward %f" % (e, train_reward_avg))
 
-            # train_end_time = time.clock()
-            # print("sample:" + str(sample_end_time-begin_time) + " train:" + str(train_end_time-sample_end_time))
-
-    result = pd.DataFrame({'train_acc': train_acc_list, 'test_acc': test_acc_list, 'train_loss': train_loss_list ,'test_loss': test_loss_list, \
-                                                            'train_spa': train_spa_list, 'test_spa': test_spa_list})
+    result = pd.DataFrame({'train_acc': train_acc_list, 'test_acc': test_acc_list, 'test_baseline_acc': test_acc_baseline_list, 'train_loss': train_loss_list ,'test_loss': test_loss_list, \
+                                                            'train_spa': train_spa_list, 'test_spa': test_spa_list, 'train_reward': train_reward_list})
     result.to_csv(save_path, index=False)
 
 
@@ -376,9 +404,9 @@ if __name__ == "__main__":
     parser.add_argument('--hidden_size', type=int, help='hidden size for selection', default=10)
     parser.add_argument('--num_classes', type=int, help='number of class', default=3)
     parser.add_argument('--batch_size', type=int, help='batch size', default=256)
-    parser.add_argument('--epochs', type=int, help='epoch number', default=200)
+    parser.add_argument('--epochs', type=int, help='epoch number', default=50)
     parser.add_argument('--lr_predictor', type=float, help='learning rate of predictor network', default=1e-1)
-    parser.add_argument('--lr_selector', type=float, help='learning rate of selector network', default=1e-3)
+    parser.add_argument('--lr_selector', type=float, help='learning rate of selector network', default=1e-2)
     parser.add_argument('--dropout', type=float, help='keep rate', default=0.5)
 
     args = parser.parse_args()

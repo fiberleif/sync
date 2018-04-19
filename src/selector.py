@@ -37,6 +37,7 @@ class Selector(object):
         self.adv_ph = tf.placeholder(tf.float32, (None,), "advantages")
 
     def _selector_nn(self):
+        # self.dense = tf.layers.dense(inputs=self.obs_ph, units=64, activation=tf.nn.relu)
         self.act_prob = tf.layers.dense(inputs=self.obs_ph, units=2, activation=tf.nn.softmax)
 
     def _loss_train_op(self):
