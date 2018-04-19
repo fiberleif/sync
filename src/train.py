@@ -362,7 +362,7 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
             batch_reward_bias = predictor.sess.run(predictor.reward, feed_dict={predictor.input_ph: batch_x, \
                                             predictor.label_ph: batch_y, predictor.action_ph: batch_one, predictor.keep_prob_ph: 1})
             batch_reward -= batch_reward_bias
-        
+            batch_reward = batch_reward.reshape((batch_size, -1))
             """
             # v2-batch baseline
             batch_reward_bias = np.mean(batch_reward)
