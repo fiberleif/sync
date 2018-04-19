@@ -34,7 +34,7 @@ class Selector(object):
         # inputs, labels and actions:
         self.obs_ph = tf.placeholder(tf.float32, (None, self.input_dim), "observations") 
         self.act_ph = tf.placeholder(tf.float32, (None, 2), "actions") 
-        self.adv_ph = tf.placeholder(tf.float32, (None,), "advantages")
+        self.adv_ph = tf.placeholder(tf.float32, (None, 1), "advantages")
 
     def _selector_nn(self):
         # self.dense = tf.layers.dense(inputs=self.obs_ph, units=64, activation=tf.nn.relu)
