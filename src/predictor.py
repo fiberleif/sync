@@ -75,6 +75,7 @@ class Predictor(object):
         
     def _reward_test_op(self):
         self.reward = tf.reduce_sum(self.label_ph*tf.log(self.trend_prob), reduction_indices=[1])
+        self.reward_acc = tf.cast(tf.equal(tf.argmax(self.trend_prob,1), tf.argmax(self.label_ph,1)), tf.float32)
 
     def _accuracy_test_op(self):
         self.acc_bool = tf.equal(tf.argmax(self.trend_prob,1), tf.argmax(self.label_ph,1))

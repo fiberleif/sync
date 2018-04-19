@@ -372,12 +372,13 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
             train_reward = np.mean(batch_reward)
             train_reward_sum += train_reward
 
-            extended_reward = np.zeros((batch_size*hidden_size,))
-            for j in range(batch_size):
-                # extended_reward[j*hidden_size : (j+1)*hidden_size] = batch_reward[j]
-                for k in range(hidden_size):
-                    extended_reward[j+k*batch_size] = batch_reward[j]
+            # extended_reward = np.zeros((batch_size*hidden_size,))
+            # for j in range(batch_size):
+            #     # extended_reward[j*hidden_size : (j+1)*hidden_size] = batch_reward[j]
+            #     for k in range(hidden_size):
+            #         extended_reward[j+k*batch_size] = batch_reward[j]
 
+            extended_reward = np.tile(batch_reward, [hidden_size, 1])
             # if(e % update_len <= predictor_len):
             #     predictor.sess.run(predictor.train_op, feed_dict={predictor.input_ph: batch_x, \
             #                                 predictor.label_ph: batch_y, predictor.action_ph: batch_a, predictor.keep_prob_ph: 1}) 
