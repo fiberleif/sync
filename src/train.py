@@ -136,8 +136,8 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
                 + "_train_dataset.csv"
     test_dataset_path = "/home/data/guoqing/dataset/timestep_" + str(timesteps) \
                 + "_test_dataset.csv"
-    save_path = "/home/data/guoqing/prediction/result/model_1cnn_3dense_timestep_" + str(timesteps) \
-                     + "_dp_" + str(dropout) + ".csv"
+    save_path = "/home/data/guoqing/prediction/result/baseline_1cnn_1dense_timestep_" + str(timesteps) \
+                     + "_selector_lr_" + str(lr_selector) + ".csv"
     update_len = 20
     predictor_len = 9
     # Prepare train data.
@@ -180,7 +180,7 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
     print("train batch number:", train_batch_num)
     print("test batch number:", test_batch_num)
    
-    for e in range(5):
+    for e in range(500):
         # shuffle training data
         shuffle_indices = np.random.permutation(np.arange(train_size))
         X_train_shuffle = X_train_reshape[shuffle_indices]
@@ -352,6 +352,33 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
             # sess.run(train_step, feed_dict={x: batch_x, y: batch_y, keep_prob: 0.5})
             batch_reward = predictor.sess.run(predictor.reward, feed_dict={predictor.input_ph: batch_x, \
                                             predictor.label_ph: batch_y, predictor.action_ph: batch_a, predictor.keep_prob_ph: 1})
+            
+            # # 1/0->0.9/0.1
+            # trans_count = 0
+            # for index in range(batch_size):
+            #     if(batch_reward[index] == 1):
+            #         batch_reward[index] = 0.9
+            #         trans_count += 1
+            #     elif(batch_reward[index] == 0):
+            #         batch_reward[index] = 0.1
+            #         trans_count += 1
+            # assert trans_count== batch_size
+
+            # batch_reward = batch_reward.reshape((batch_size, -1))
+
+            # # advice from teacher xia
+            # batch_prob = predictor.sess.run(predictor.trend_prob, feed_dict={predictor.input_ph: batch_x, \
+            #                                 predictor.label_ph: batch_y, predictor.action_ph: batch_a, predictor.keep_prob_ph: 1})
+            # reward_basic = np.empty([batch_size, num_classes])
+            # for row in range(batch_size):
+            #     for col in range(num_classes):
+            #         if(batch_y[row, col]==1):
+            #             reward_basic[row, col] = 0.9
+            #         elif(batch_y[row, col] == 0):
+            #             reward_basic[row, col] = 0.1
+            # batch_reward = np.sum(reward_basic*batch_prob, axis=1)
+
+
             # reward shaping here
             """
             pass
@@ -363,6 +390,7 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
                                             predictor.label_ph: batch_y, predictor.action_ph: batch_one, predictor.keep_prob_ph: 1})
             batch_reward -= batch_reward_bias
             batch_reward = batch_reward.reshape((batch_size, -1))
+            
             """
             # v2-batch baseline
             batch_reward_bias = np.mean(batch_reward)

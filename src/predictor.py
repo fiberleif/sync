@@ -51,13 +51,13 @@ class Predictor(object):
 
     def _predictor_nn(self):
         """ Predictor network structure """
-        self.conv1 = tf.layers.conv2d(inputs=self.input_ph, filters=128, kernel_size= [3,1], activation=tf.nn.relu)
+        self.conv1 = tf.layers.conv2d(inputs=self.input_ph, filters=16, kernel_size= [3,1], activation=tf.nn.relu)
         # self.conv = tf.layers.conv2d(inputs=self.input_ph, filters=16, kernel_size= [3,1], activation=tf.nn.sigmoid)
         # self.conv2 = tf.layers.conv2d(inputs=self.conv1, filters=16, kernel_size= [3,1], activation=tf.nn.relu)
         self.flat = tf.contrib.layers.flatten(self.conv1)
-        self.dense0 = tf.layers.dense(inputs=self.flat, units=128, activation=tf.nn.relu)
+        # self.dense0 = tf.layers.dense(inputs=self.flat, units=32, activation=tf.nn.relu)
         # self.dense1 = tf.layers.dense(inputs=self.dense0, units=512, activation=tf.nn.relu)
-        self.dense = tf.layers.dense(inputs=self.dense0, units=self.hidden_size, activation=tf.nn.relu)
+        self.dense = tf.layers.dense(inputs=self.flat, units=self.hidden_size, activation=tf.nn.relu)
         # self.dense = tf.layers.dense(inputs=self.flat, units=self.hidden_size, activation=tf.nn.sigmoid)
 
         # MLP
@@ -70,8 +70,9 @@ class Predictor(object):
         self.predictor_vars = tf.trainable_variables()
         self.decision_vars = [var for var in self.predictor_vars if "decision_layer" in var.name]
         self.loss = tf.reduce_mean(-tf.reduce_sum(self.label_ph*tf.log(self.trend_prob), reduction_indices=[1]))
-        self.train_op = tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(self.loss)
-        self.decision_op = tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(self.loss, var_list= self.decision_vars)
+        # self.train_op = tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(self.loss)
+        self.train_op = tf.train.MomentumOptimizer(learning_rate=self.lr, momentum=0.9).minimize(self.loss)
+        # self.decision_op = tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(self.loss, var_list= self.decision_vars)
         
     def _reward_test_op(self):
         self.reward = tf.reduce_sum(self.label_ph*tf.log(self.trend_prob), reduction_indices=[1])
