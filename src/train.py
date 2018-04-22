@@ -389,7 +389,6 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
             batch_reward_bias = predictor.sess.run(predictor.reward, feed_dict={predictor.input_ph: batch_x, \
                                             predictor.label_ph: batch_y, predictor.action_ph: batch_one, predictor.keep_prob_ph: 1})
             batch_reward -= batch_reward_bias
-            batch_reward = batch_reward.reshape((batch_size, -1))
             
             """
             # v2-batch baseline
@@ -406,7 +405,7 @@ def main(timesteps, num_channels, hidden_size, num_classes, batch_size, epochs, 
             #     for k in range(hidden_size):
             #         extended_reward[j+k*batch_size] = batch_reward[j]
 
-            extended_reward = np.tile(batch_reward, [hidden_size, 1])
+            extended_reward = np.tile(batch_reward, hidden_size)
             # if(e % update_len <= predictor_len):
             #     predictor.sess.run(predictor.train_op, feed_dict={predictor.input_ph: batch_x, \
             #                                 predictor.label_ph: batch_y, predictor.action_ph: batch_a, predictor.keep_prob_ph: 1}) 

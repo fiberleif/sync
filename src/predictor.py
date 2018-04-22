@@ -71,7 +71,7 @@ class Predictor(object):
         self.decision_vars = [var for var in self.predictor_vars if "decision_layer" in var.name]
         self.loss = tf.reduce_mean(-tf.reduce_sum(self.label_ph*tf.log(self.trend_prob), reduction_indices=[1]))
         # self.train_op = tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(self.loss)
-        self.train_op = tf.train.MomentumOptimizer(learning_rate=self.lr, momentum=0.9).minimize(self.loss)
+        self.train_op = tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(self.loss)
         # self.decision_op = tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(self.loss, var_list= self.decision_vars)
         
     def _reward_test_op(self):

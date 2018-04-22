@@ -32,9 +32,9 @@ class Selector(object):
     def _placeholders(self):
         """" Input placeholders """
         # inputs, labels and actions:
-        self.obs_ph = tf.placeholder(tf.float32, (None, self.input_dim), "observations") 
-        self.act_ph = tf.placeholder(tf.float32, (None, 2), "actions") 
-        self.adv_ph = tf.placeholder(tf.float32, (None, 1), "advantages")
+        self.obs_ph = tf.placeholder(tf.float32, [None, self.input_dim], "observations") 
+        self.act_ph = tf.placeholder(tf.float32, [None, 2], "actions") 
+        self.adv_ph = tf.placeholder(tf.float32, [None,], "advantages")
 
     def _selector_nn(self):
         # self.dense = tf.layers.dense(inputs=self.obs_ph, units=64, activation=tf.nn.relu)
@@ -46,11 +46,12 @@ class Selector(object):
     
     def _sample_multinomial(self):
         """ Sample from distribution, given observation """
+        """ Return col vector: [batch_size, num_samples]"""
         self.sample_mul = tf.multinomial(self.act_prob, 1)
         
     def _sample_maximum(self):
         """ Sample via argmax, given observation """
-        """ return other type with comparison to multinomial"""
+        """ Return row vector"""
         self.sample_max = tf.argmax(self.act_prob, 1)
     
     def _init_session(self):
