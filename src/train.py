@@ -66,7 +66,7 @@ def prepare_data(timesteps, num_features, num_classes, train_dataset_path, test_
     return X_train_reshape, Y_train, X_test_reshape, Y_test, train_size, test_size
 
 
-def run_episode(batch_x, predictor, selector, batch_size, hidden_size):
+def run_episode(batch_x, predictor, selector, batch_size, hidden_size, sampe_mode):
     """
     collect trajectories given batch_x
     """
@@ -78,7 +78,10 @@ def run_episode(batch_x, predictor, selector, batch_size, hidden_size):
         position_vector = np.zeros((batch_size, hidden_size))
         position_vector[:,i] = 1
         state = np.concatenate((hidden_vector, binary_vector, position_vector), axis=1)
-        action = selector.sample_multinomial(state).reshape((batch_size, 1))
+        if sampe_mode == 1:
+            action = selector.sample_multinomial(state).reshape((batch_size, 1))
+        else:
+            action = selector.sample_maximum(state).reshape((batch_size, 1))
         state_list.append(state)
         action_list.append(action)
         binary_vector[:,i] = action[:,0]
@@ -239,6 +242,7 @@ def main(timesteps, num_features, hidden_size, num_classes, batch_size, epochs, 
 
 
     # Pre-train pattern selector
+    lr_multiplier = 1
     for e in range(epochs):
 
         # Shuffle training data
@@ -261,7 +265,7 @@ def main(timesteps, num_features, hidden_size, num_classes, batch_size, epochs, 
             start = i * batch_size
             batch_x = X_train_reshape[start:start + batch_size]
             batch_y = Y_train[start:start + batch_size]
-            batch_a, _, _ = run_episode(batch_x, predictor, selector, batch_size, hidden_size)
+            batch_a, _, _ = run_episode(batch_x, predictor, selector, batch_size, hidden_size, 0)
 
             # train_acc = predictor.sess.run(predictor.accuracy, feed_dict={predictor.input_ph: batch_x, \
             #                                         predictor.label_ph: batch_y, predictor.action_ph: batch_a, predictor.keep_prob_ph: 1})
@@ -288,7 +292,7 @@ def main(timesteps, num_features, hidden_size, num_classes, batch_size, epochs, 
             batch_x = X_test_reshape[start:start + batch_size]
             batch_y = Y_test[start:start + batch_size]
 
-            batch_a, _, _ = run_episode(batch_x, predictor, selector, batch_size, hidden_size)
+            batch_a, _, _ = run_episode(batch_x, predictor, selector, batch_size, hidden_size, 0)
             
             batch_one = np.ones((batch_size, hidden_size))
 
@@ -327,7 +331,7 @@ def main(timesteps, num_features, hidden_size, num_classes, batch_size, epochs, 
             batch_y = Y_train_shuffle[start:start + batch_size]
 
             # record states, actions.
-            batch_a, observations_ps, actions_ps = run_episode(batch_x, predictor, selector, batch_size, hidden_size)
+            batch_a, observations_ps, actions_ps = run_episode(batch_x, predictor, selector, batch_size, hidden_size, 1)
 
             batch_reward = predictor.sess.run(predictor.reward, feed_dict={predictor.input_ph: batch_x, \
                                             predictor.label_ph: batch_y, predictor.action_ph: batch_a, predictor.keep_prob_ph: 1})
@@ -392,9 +396,11 @@ def main(timesteps, num_features, hidden_size, num_classes, batch_size, epochs, 
             #     selector.sess.run(selector.train_op, feed_dict={selector.obs_ph: observations_ps, \
             #                                 selector.act_ph: actions_ps, selector.adv_ph: extended_reward}) 
             
+            if e % 10 == 0 and e != 0:
+                lr_multiplier = lr_multiplier*0.1
             # Warm-start for selector
             selector.sess.run(selector.train_op, feed_dict={selector.obs_ph: observations_ps, \
-                                            selector.act_ph: actions_ps, selector.adv_ph: extended_reward})
+                                            selector.act_ph: actions_ps, selector.adv_ph: extended_reward, selector.lr_ph: selector.lr*lr_multiplier})
 
         train_reward_avg = train_reward_sum / train_batch_num
         train_reward_list.append(train_reward_avg)

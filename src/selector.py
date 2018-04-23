@@ -31,17 +31,18 @@ class Selector(object):
     def _placeholders(self):
         """" Input placeholders """
         # inputs, labels and actions:
+        self.lr_ph = tf.placeholder(tf.float32, (), 'learning_rate')
         self.obs_ph = tf.placeholder(tf.float32, [None, self.input_dim], "observations") 
         self.act_ph = tf.placeholder(tf.float32, [None, 2], "actions") 
         self.adv_ph = tf.placeholder(tf.float32, [None,], "advantages")
 
     def _selector_nn(self):
-        # self.dense = tf.layers.dense(inputs=self.obs_ph, units=64, activation=tf.nn.relu)
-        self.act_prob = tf.layers.dense(inputs=self.obs_ph, units=2, activation=tf.nn.softmax)
+        self.dense = tf.layers.dense(inputs=self.obs_ph, units=128, activation=tf.nn.relu)
+        self.act_prob = tf.layers.dense(inputs=self.dense, units=2, activation=tf.nn.softmax)
 
     def _loss_train_op(self):
         self.loss = tf.reduce_mean(-tf.reduce_sum(self.act_ph*tf.log(self.act_prob), reduction_indices=[1])*self.adv_ph)
-        self.train_op = tf.train.GradientDescentOptimizer(learning_rate=self.lr).minimize(self.loss)
+        self.train_op = tf.train.GradientDescentOptimizer(learning_rate=self.lr_ph).minimize(self.loss)
     
     def _sample_multinomial(self):
         """ Sample from distribution, given observation """
