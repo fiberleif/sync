@@ -253,6 +253,8 @@ def main(timesteps, num_features, hidden_size, num_classes, batch_size, epochs, 
         train_spa_sum = 0
         test_spa_sum = 0
         train_reward_sum = 0
+        train_reward_min = 0
+        train_reward_max = 0
 
         # Testing for train dataset
         for i in range(0, train_batch_num):
@@ -369,11 +371,20 @@ def main(timesteps, num_features, hidden_size, num_classes, batch_size, epochs, 
             batch_reward -= batch_reward_bias
             """
 
+            if(i == 0):
+                train_reward_max = np.max(batch_reward)
+                train_reward_min = np.min(batch_reward)
+            else:
+                if(train_reward_max < np.max(batch_reward)):
+                    train_reward_max = np.max(batch_reward)
+                if(train_reward_min > np.min(batch_reward)):
+                    train_reward_min = np.min(batch_reward)
+
             train_reward = np.mean(batch_reward)
             train_reward_sum += train_reward
 
             extended_reward = np.tile(batch_reward, hidden_size)
-            
+
             # if(e % update_len <= predictor_len):
             #     predictor.sess.run(predictor.train_op, feed_dict={predictor.input_ph: batch_x, \
             #                                 predictor.label_ph: batch_y, predictor.action_ph: batch_a, predictor.keep_prob_ph: 1}) 
@@ -383,10 +394,11 @@ def main(timesteps, num_features, hidden_size, num_classes, batch_size, epochs, 
             
             # Warm-start for selector
             selector.sess.run(selector.train_op, feed_dict={selector.obs_ph: observations_ps, \
-                                            selector.act_ph: actions_ps, selector.adv_ph: extended_reward}) 
+                                            selector.act_ph: actions_ps, selector.adv_ph: extended_reward})
+
         train_reward_avg = train_reward_sum / train_batch_num
         train_reward_list.append(train_reward_avg)
-        print("epoch %d: train_reward %f" % (e, train_reward_avg))
+        print("epoch %d: train_reward avg %f, train_reward max %f, train_reward min %f" % (e, train_reward_avg, train_reward_max, train_reward_min))
 
     result = pd.DataFrame({'train_acc': train_acc_list, 'test_acc': test_acc_list, 'test_baseline_acc': test_acc_baseline_list, 'train_loss': train_loss_list ,'test_loss': test_loss_list, \
                                                             'train_spa': train_spa_list, 'test_spa': test_spa_list, 'train_reward': train_reward_list})
