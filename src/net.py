@@ -109,10 +109,10 @@ class Complex(object):
         self.gradient_en1 = optimizer_en_op.compute_gradients(self.loss_en1, var_list=en_vars)
         self.gradient_en2 = optimizer_en_op.compute_gradients(self.loss_en2, var_list=en_vars)
 
-        grads_ph = [(tf.placeholder(tf.float32, shape=g.get_shape()), v)
+        self.grads_ph = [(tf.placeholder(tf.float32, shape=g.get_shape()), v)
                      for (g, v) in self.gradient_en1]
 
-        self.train_en_op = optimizer_en_op.apply_gradients(grads_ph)
+        self.train_en_op = optimizer_en_op.apply_gradients(self.grads_ph)
         self.train_pre_op = optimizer_pre_op.minimize(self.loss_pre, var_list=pre_vars)
         self.train_sel_op = optimizer_sel_op.minimize(self.loss_sel, var_list=sel_vars)
                 

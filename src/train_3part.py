@@ -242,19 +242,19 @@ def main(timesteps, num_features, hidden_size, num_classes, batch_size, epochs, 
                 batch_reward = net.sess.run(net.reward, feed_dict={net.input_ph: batch_x, \
                                             net.label_ph: batch_y, net.action_ph: batch_a, net.keep_prob_ph: 1})
                 extended_reward = np.tile(batch_reward, hidden_size)
-                extended_x = np.tile(batch_x, hidden_size)
+                extended_x = np.tile(batch_x, (hidden_size, 1, 1, 1))
 
                 grad_en1 = net.sess.run(net.gradient_en1, feed_dict={net.input_ph: batch_x, \
                                                 net.label_ph: batch_y, net.action_ph: batch_a, net.lr_en_ph: lr_encoder, net.keep_prob_ph: 1})
                 grad_en2 = net.sess.run(net.gradient_en2, feed_dict={net.input_ph: extended_x, net.obs_his_ph: observations_ps, \
                                                 net.act_ph: actions_ps, net.adv_ph: extended_reward, net.lr_en_ph: lr_encoder})
-                grad_sum = {}
+                grad_sum = {net.lr_en_ph: lr_encoder}
                 # add up
                 for i in range(len(net.grads_ph)):
                     k = net.grads_ph[i][0]
                     grad_sum[k] = grad_en1[i][0] + grad_en2[i][0]
 
-                net.sess.run(net.train_en_op, feed_dict={net.grads_ph: grad_sum})
+                net.sess.run(net.train_en_op, feed_dict=grad_sum)
 
             elif(e<100):
                 # Update predictor
@@ -318,7 +318,7 @@ def main(timesteps, num_features, hidden_size, num_classes, batch_size, epochs, 
                 train_reward_sum += train_reward
 
                 extended_reward = np.tile(batch_reward, hidden_size)
-                extended_x = np.tile(batch_x, hidden_size)
+                extended_x = np.tile(batch_x, (hidden_size, 1, 1, 1))
                 
                 # if e % 10 == 0 and e != 0:
                 #     lr_multiplier = lr_multiplier*0.1
