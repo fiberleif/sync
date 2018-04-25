@@ -77,7 +77,7 @@ class Complex(object):
         with tf.variable_scope('Predictor'):
             self.dense_dropout = tf.nn.dropout(self.dense, self.keep_prob_ph)
             self.dense_sel = self.dense_dropout*self.action_ph
-            self.trend_prob = tf.layers.dense(inputs=self.dense_sel, units=self.num_classes, activation=tf.nn.softmax, name="decision_layer", use_bias=False)
+            self.trend_prob = tf.layers.dense(inputs=self.dense_sel, units=self.num_classes, activation=tf.nn.softmax, use_bias=False)
 
         # Selector nn
         with tf.variable_scope('Selector'):

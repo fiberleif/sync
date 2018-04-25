@@ -208,7 +208,7 @@ def main(timesteps, num_features, hidden_size, num_classes, batch_size, epochs, 
             test_acc_baseline = net.sess.run(net.accuracy, feed_dict={net.input_ph: batch_x, \
                                                     net.label_ph: batch_y, net.action_ph: batch_one, net.keep_prob_ph: 1})
 
-            test_acc, test_loss = net.sess.run([net.accuracy, net.loss], feed_dict={net.input_ph: batch_x, \
+            test_acc, test_loss = net.sess.run([net.accuracy, net.loss_pre], feed_dict={net.input_ph: batch_x, \
                                                     net.label_ph: batch_y, net.action_ph: batch_a, net.keep_prob_ph: 1})
 
             test_acc_sum += test_acc
