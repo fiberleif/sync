@@ -1,5 +1,7 @@
 """
-multi timestep stock prediction via Sparse Feature Extraction.
+multi timestep stock prediction via Sparse Feature Extraction.(three-module version).
+
+Predictor, Selector
 
 Tensorflow implementation
 
