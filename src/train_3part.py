@@ -120,7 +120,7 @@ def main(timesteps, num_features, hidden_size, num_classes, batch_size, epochs, 
     test_dataset_path = "/home/data/guoqing/dataset/timestep_" + str(timesteps) \
                 + "_test_dataset.csv"
     save_path = "/home/data/guoqing/prediction/result/model_1cnn_1dense_timestep_" + str(timesteps) \
-                     + "_selector_lr_" + str(lr_selector) + "_reward_logp_bias.csv"
+                     + "_selector_lr_" + str(lr_selector) + "_reward_logp_bias_3module.csv"
 
     # Joint-train step controller.
     update_len = 20
@@ -330,8 +330,8 @@ def main(timesteps, num_features, hidden_size, num_classes, batch_size, epochs, 
                 train_reward_list.append(train_reward_avg)
                 print("epoch %d: train_reward avg %f, train_reward max %f, train_reward min %f" % (e, train_reward_avg, train_reward_max, train_reward_min))
 
-    result = pd.DataFrame({'train_acc': train_acc_list, 'test_acc': test_acc_list, 'test_baseline_acc': test_acc_baseline_list, 'train_loss': train_loss_list ,'test_loss': test_loss_list, \
-                                                            'train_spa': train_spa_list, 'test_spa': test_spa_list)
+    result = pd.DataFrame({'train_acc': train_acc_list, 'test_acc': test_acc_list, 'test_baseline_acc': test_acc_baseline_list, 'train_loss': train_loss_list ,'test_loss': test_loss_list,\
+                                    'train_spa': train_spa_list, 'test_spa': test_spa_list})
     result.to_csv(save_path, index=False)
 
 
@@ -344,7 +344,7 @@ if __name__ == "__main__":
     parser.add_argument('--batch_size', type=int, help='batch size', default=256)
     parser.add_argument('--epochs', type=int, help='epoch number', default=100)
     parser.add_argument('--lr_predictor', type=float, help='learning rate of predictor module', default=1e-1)
-    parser.add_argument('--lr_selector', type=float, help='learning rate of selector module', default=1e-2)
+    parser.add_argument('--lr_selector', type=float, help='learning rate of selector module', default=1e-3)
     # encoder loss: reduce sum
     parser.add_argument('--lr_encoder', type=float, help='learning rate of encoder module', default=1e-4)
     parser.add_argument('--dropout', type=float, help='keep rate', default=0.5)

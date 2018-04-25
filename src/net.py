@@ -135,7 +135,7 @@ class Complex(object):
     def _get_hidden_state(self, batch_x):
         return self.sess.run(self.dense, feed_dict={self.input_ph: batch_x})
 
-     def _sample_multinomial(self):
+    def _sample_multinomial(self):
         """ Sample from distribution, given observation """
         """ Return col vector: [batch_size, num_samples]"""
         self.sample_mul = tf.multinomial(self.act_prob, 1)
